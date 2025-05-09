@@ -4,7 +4,7 @@
 <head>
 	<title>About Ren Tianle | 任恬乐</title>
 	<meta charset="UTF-8">
-	<meta name="description" content="She dives">
+	<meta name="description" content="Those who stay close to the Oceans">
 	<meta name="keywords" content="photographer, html">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -25,36 +25,31 @@
 
 	<!-- Main Stylesheets -->
 	<link rel="stylesheet" href="css/style.css" />
+
+
+	<!-- Custom Styles -->
 	<style>
+		/* Center the Essays Section */
 		.essays-section {
 			display: flex;
 			justify-content: center;
-			/* Horizontally centers the content */
+			/* Horizontally center content */
 			padding-top: 50px;
-			/* Optional padding to control vertical positioning */
-			margin-left: 50px;
-			color: #000;
+			/* Optional padding */
 		}
 
-		.essays-section ul li a {
-			color: black;
-			/* Set text color to black */
-			font-weight: 400;
-			text-decoration: none;
+		/* Container for the essay content */
+		.essay-container {
+			text-align: left;
+			background-color: white;
+			padding: 30px;
+			width: 80%;
+			max-width: 3000px;
+			margin: 0 auto;
 		}
 
-		.essays-section ul p a {
-			color: grey;
-			font-weight: 500;
-			text-decoration: none;
-		}
-
-
-		/* Underline on hover */
-		.essays-section ul li a:hover {
-			text-decoration: underline;
-			font: bold;
-			/* Underline on hover */
+		.essay-title {
+			text-align: center;
 		}
 	</style>
 </head>
@@ -85,25 +80,20 @@
 	<!-- Essays section -->
 	<section class="essays-section">
 		<div class="essay-container">
-
-			<div>
-				<!-- Essays section -->
-				<section class="essays-section">
-					<ul>
-						<li><a href="dive1.html">Those who stay close to the Oceans. </a></li><br>
-						<li><a href="dive2.html">一直落到海水变黑 </a></li><br>
-					</ul>
-				</section>
-				<!-- Essays section end -->
-				<br><br>
+			<h5 class="essay-title">一直落到海水变黑</h5><br>
+			<br>
+			<div class="essay-subtitle">
+				很喜欢一部名叫“一直游到海水变蓝”的电影，所以这里借用这个标题，来写写自由潜中，自由落体到海变得漆黑一片的那部分。
 			</div>
-		</div>
 
+			<br><br> 
+
+		</div>
 	</section>
 	<!-- Essays section end -->
 
 
-
+	<!-- Essays section end -->
 
 	<!--====== Javascripts & Jquery ======-->
 	<script src="js/jquery-3.2.1.min.js"></script>
