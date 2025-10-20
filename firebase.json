@@ -1,6 +1,13 @@
 {
   "hosting": {
     "public": "public",
+    "redirects": [
+      {
+        "source": "/(.*)",
+        "destination": "https://www.tianleren.com/$1",
+        "type": 301
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",
