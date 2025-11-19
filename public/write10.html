@@ -4,7 +4,7 @@
 <head>
 	<title>About Ren Tianle | 任恬乐</title>
 	<meta charset="UTF-8">
-	<meta name="description" content="She writes">
+	<meta name="description" content="An encounter on the street of Toulouse at 4am">
 	<meta name="keywords" content="photographer, html">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -26,42 +26,52 @@
 	<!-- Main Stylesheets -->
 	<link rel="stylesheet" href="css/style.css" />
 
+	<!-- Custom Styles -->
 	<style>
 		.essays-section {
 			display: flex;
 			justify-content: center;
-			/* Horizontally centers the content */
+			/* Horizontally center content */
 			padding-top: 50px;
-			/* Optional padding to control vertical positioning */
-			margin-left: 50px;
-			color: #000;
+			/* Optional padding */
 		}
 
-		.essays-section ul li a {
-			color: black;
-			/* Set text color to black */
-			font-weight: 400;
-			text-decoration: none;
+		/* Container for the essay content */
+		.essay-container {
+			text-align: left;
+			background-color: white;
+			padding: 30px;
+			width: 80%;
+			max-width: 3000px;
+			margin: 0 auto;
 		}
 
-		.essays-section ul p a {
-			color: grey;
-			font-weight: 500;
-			text-decoration: none;
+		.essay-title {
+			text-align: center;
 		}
 
+		.essay-subtitle {
+			text-align: left;
+		}
 
-		/* Underline on hover */
-		.essays-section ul li a:hover {
-			text-decoration: underline;
-			font: bold;
-			/* Underline on hover */
+		.pull-quote {
+			font-style: italic;
+			font-size: 0.9em;
+			color: #444;
+
+		}
+
+		.pull-quote footer {
+			font-style: normal;
+			font-size: 0.85em;
+			color: #666;
 		}
 	</style>
 </head>
 
-<body>
 
+
+<body>
 	<!-- Header section -->
 	<div class="header-section">
 		<header
@@ -81,25 +91,40 @@
 	</div>
 	<!-- Header section end  -->
 
+
 	<!-- Essays section -->
 	<section class="essays-section">
-		<ul>
-			<li><a href="write1.html">I am my own home, at least I should believe so. <br> [Chinese]</a></li><br>
-			<li><a href="write2.html">Some wisdom from an old traveller</a></li><br>
-			<li><a href="write3.html">An encounter on the street of Toulouse at 4am.<br>[Chinese]</a></li><br>
-			<li><a href="write4.html">在这世界上晃荡的人，和这晃荡的世界</a></li><br>
-			<li><a href="write5.html">I see you the next time you see me. <br> ---Thoughs on human connections, love, <br> and the saddest thing ever: saying Goodbye.</a></li><br>
-			<li><a href="write10.html">Just a long time traveller here</a></li><br>
-			<li><a href="write6.html">8 seconds away from the earth</a></li><br>
-			<li><a href="write9.html">Topophilia</a></li><br>
-			<li><a href="write7.html">So, Koh Tao then?</a></li><br>
-			<li><a href="write8.html">卖手链的女孩</a></li><br>	
-			<p><a href="sheWrites.html">More coming up soon</a></p><br>
-		</ul>
-	</section>
+		<div class="essay-container">
+			<h3 class="essay-title">Just a long time traveller here</h3><br>
+			<div>
+				This year, I signed a lease of 3 years in a city that has been a base for me in the past 6 years. I had good reasons to stay for a bit longer, but I am pretty sure I will move again, to where I don’t really know yet, but I will leave for sure. 
+				
+				<br><br>With this type of mindset I find myself slowly becoming a traveller here, something's happening in town? Sure let's not miss that, won't be here for long after all; People or situations that drain me? I’m done tolerating them, I handle everything in whatever way feels the healthiest for myself.; A relationship that probably won’t go anywhere long-term? Well, life is unpredictable, so why not just enjoy the moment while it lasts.
+				
+				<br><br>I wrote these as my self intro on Couchsurfing:
 
+				<blockquote class="pull-quote">
+				<br>I joke that I travel to find my next “home base”, and somehow I find traveling to places where nobody knows me helps to understand myself better. And seeing different places & ways of living life reminds me of what I’ll like / dislike about places I live in, and slowly get a clearer idea of what type of life I want to build for myself.
+				<br>—— that's pretty much why I travel! 
+				</blockquote>
+
+				<br>It feels so good to be a traveller honestly, and at some point I realized: <strong>Hey, aren't we all just long time travelers on this planet? </strong>
+
+			</div>
+
+			<br><br>
+
+			<p>
+				17th Nov 2025<br>
+				In Singapore
+			</p>
+
+		</div>
+	</section>
 	<!-- Essays section end -->
 
+
+	<!-- Essays section end -->
 
 	<!--====== Javascripts & Jquery ======-->
 	<script src="js/jquery-3.2.1.min.js"></script>
