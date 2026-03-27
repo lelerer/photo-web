@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XAI Tester — Developer Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Playfair+Display:ital,wght@0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #f5f2ec;
+  --surface:  #fffef9;
+  --surface2: #f0ece3;
+  --border:   #d8d2c4;
+  --ink:      #1a1710;
+  --ink2:     #4a4538;
+  --muted:    #9a9080;
+  --accent:   #c8401a;
+  --accent2:  #1a5c3a;
+  --accent3:  #2a4a7a;
+  --code-bg:  #1c1a16;
+  --code-text:#e8e0cc;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Source Serif 4', Georgia, serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.8;
+  font-size: 15px;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Layout */
+.shell { display: flex; min-height: 100vh; }
+
+aside {
+  width: 240px;
+  flex-shrink: 0;
+  position: fixed;
+  inset: 0 auto 0 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding-bottom: 60px;
+  z-index: 10;
+}
+
+main {
+  margin-left: 240px;
+  flex: 1;
+  max-width: 860px;
+  padding: 64px 68px 120px;
+}
+
+/* Sidebar */
+.sb-top {
+  padding: 32px 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sb-top .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.sb-top h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+.sb-top .ver {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.sb-section { padding: 20px 12px 0; }
+
+.sb-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 8px 8px;
+}
+
+aside a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: var(--ink2);
+  text-decoration: none;
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  line-height: 1.4;
+  transition: background .12s, color .12s;
+}
+
+.sb-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+  flex-shrink: 0;
+  transition: background .12s;
+}
+
+aside a:hover { background: var(--surface2); color: var(--ink); }
+aside a:hover .sb-dot { background: var(--ink2); }
+aside a.active { color: var(--accent); }
+aside a.active .sb-dot { background: var(--accent); }
+
+/* Hero */
+.hero {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 48px;
+  margin-bottom: 72px;
+}
+
+.hero-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ink);
+  margin-bottom: 24px;
+  letter-spacing: -.01em;
+}
+
+.hero h1 em { font-style: italic; color: var(--accent); font-weight: 400; }
+
+.hero-desc {
+  font-size: 16px;
+  color: var(--ink2);
+  max-width: 540px;
+  line-height: 1.75;
+  margin-bottom: 32px;
+}
+
+.hero-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.hchip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--ink2);
+  background: var(--surface);
+}
+
+/* Module trio */
+.module-trio {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 28px 0 52px;
+}
+
+.mod-card { background: var(--surface); padding: 24px 22px; }
+
+.mod-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .1em;
+  margin-bottom: 6px;
+}
+
+.mod-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.mod-name.c { color: var(--accent); }
+.mod-name.d { color: var(--accent2); }
+.mod-name.i { color: var(--accent3); }
+
+.mod-card p { font-size: 13px; color: var(--ink2); line-height: 1.6; margin: 0; }
+
+/* Sections */
+section { margin-bottom: 80px; scroll-margin-top: 32px; }
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.h-control { color: var(--accent); }
+.h-design  { color: var(--accent2); }
+.h-io      { color: var(--accent3); }
+
+h3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 40px 0 14px;
+}
+
+h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ink);
+  margin: 26px 0 10px;
+  border-left: 3px solid var(--border);
+  padding-left: 12px;
+}
+
+h4.c { border-color: var(--accent); }
+h4.d { border-color: var(--accent2); }
+h4.i { border-color: var(--accent3); }
+
+p { color: var(--ink2); margin-bottom: 14px; line-height: 1.8; }
+p strong { color: var(--ink); font-weight: 600; }
+
+/* Code */
+pre {
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 20px 24px;
+  overflow-x: auto;
+  margin: 12px 0 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--code-text);
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 6px;
+  color: var(--accent);
+}
+
+pre code { background: none; border: none; padding: 0; color: inherit; }
+
+.kw  { color: #d98e6e; }
+.fn  { color: #7dbf8e; }
+.cl  { color: #e0b86a; }
+.st  { color: #a8d0a0; }
+.cm  { color: #5a5448; font-style: italic; }
+.nm  { color: #c0a8d8; }
+.df  { color: #88c0d8; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; font-size: 13.5px; }
+
+th {
+  text-align: left;
+  padding: 8px 14px;
+  background: var(--surface2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink2);
+  vertical-align: top;
+}
+
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface); }
+td strong { color: var(--ink); font-weight: 600; }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); }
+.dim  { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+
+/* Callouts */
+.callout {
+  border-left: 3px solid;
+  padding: 14px 18px;
+  margin: 18px 0;
+  font-size: 14px;
+  line-height: 1.65;
+  border-radius: 0 6px 6px 0;
+}
+
+.callout p { margin: 0; }
+.callout.tip  { border-color: var(--accent2); background: rgba(26,92,58,.05); }
+.callout.info { border-color: var(--accent3); background: rgba(42,74,122,.05); }
+.callout.warn { border-color: var(--accent);  background: rgba(200,64,26,.05); }
+.callout strong { color: var(--ink); }
+
+/* Lifecycle bar */
+.lifecycle { display: flex; align-items: stretch; gap: 0; margin: 28px 0 36px; }
+
+.lc-step {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 18px 14px;
+  text-align: center;
+  margin-right: -1px;
+}
+
+.lc-step:first-child { border-radius: 6px 0 0 6px; }
+.lc-step:last-child  { border-radius: 0 6px 6px 0; margin-right: 0; }
+
+.lc-step.c { border-color: var(--accent);  background: rgba(200,64,26,.04); }
+.lc-step.c .lc-name { color: var(--accent); }
+.lc-step.d { border-color: var(--accent2); background: rgba(26,92,58,.04); }
+.lc-step.d .lc-name { color: var(--accent2); }
+.lc-step.i { border-color: var(--accent3); background: rgba(42,74,122,.04); }
+.lc-step.i .lc-name { color: var(--accent3); }
+
+.lc-num  { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.lc-name { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; }
+.lc-sub  { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+/* Responsibility grid */
+.resp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin: 20px 0 32px; }
+
+.resp-box { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+
+.resp-header {
+  padding: 12px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.resp-header.c { background: rgba(200,64,26,.08); color: var(--accent); border-color: rgba(200,64,26,.2); }
+.resp-header.d { background: rgba(26,92,58,.08); color: var(--accent2); border-color: rgba(26,92,58,.2); }
+.resp-header.i { background: rgba(42,74,122,.08); color: var(--accent3); border-color: rgba(42,74,122,.2); }
+
+.resp-body { padding: 12px 16px; background: var(--surface); }
+.resp-body li {
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.7;
+  list-style: none;
+  padding-left: 14px;
+  position: relative;
+}
+.resp-body li::before { content: '·'; position: absolute; left: 0; color: var(--muted); }
+
+/* Data flow diagram */
+.dataflow {
+  background: var(--code-bg);
+  border-radius: 8px;
+  padding: 24px 28px;
+  margin: 20px 0 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 2.2;
+  color: var(--code-text);
+}
+
+.df-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.df-box { padding: 3px 10px; border-radius: 3px; font-size: 11.5px; white-space: nowrap; }
+.df-box.c { background: rgba(200,64,26,.25); color: #e89070; }
+.df-box.d { background: rgba(26,92,58,.25);  color: #70b880; }
+.df-box.i { background: rgba(42,74,122,.25); color: #7098d0; }
+.df-box.m { background: rgba(100,90,70,.3);  color: #c8b890; }
+.df-arrow { color: #5a5448; }
+.df-note  { color: #5a5448; font-size: 11px; font-style: italic; }
+
+/* Terminal mock */
+.terminal { background: var(--code-bg); border-radius: 8px; overflow: hidden; margin: 14px 0 24px; }
+
+.terminal-bar {
+  background: #2a2720;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.t-dot { width: 10px; height: 10px; border-radius: 50%; }
+.t-dot:nth-child(1) { background: #e05252; }
+.t-dot:nth-child(2) { background: #e0a840; }
+.t-dot:nth-child(3) { background: #50b060; }
+
+.terminal-label {
+  margin-left: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #5a5448;
+  letter-spacing: .05em;
+}
+
+.terminal-body {
+  padding: 18px 22px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--code-text);
+}
+
+.t-green  { color: #70b880; }
+.t-yellow { color: #e0c060; }
+.t-cyan   { color: #60c0d0; }
+.t-dim    { color: #5a5448; }
+.t-bold   { font-weight: 600; color: #e8e0cc; }
+.t-bar-g  { color: #70b880; }
+.t-bar-r  { color: #e08060; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside>
+  <div class="sb-top">
+    <div class="label">Developer Guide</div>
+    <h1>XAI Tester</h1>
+    <div class="ver">v0.1.0 · Python 3.10+</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-title">Overview</div>
+    <a href="#overview"><span class="sb-dot"></span>Architecture</a>
+    <a href="#quickstart"><span class="sb-dot"></span>Quick Start</a>
+    <!-- <a href="#lifecycle"><span class="sb-dot"></span>Lifecycle</a> -->
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-title">Core Modules</div>
+    <a href="#control"><span class="sb-dot"></span>control — session flow</a>
+    <a href="#design"><span class="sb-dot"></span>design — data layer</a>
+    <a href="#io"><span class="sb-dot"></span>io — display &amp; record</a>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-title">Reference</div>
+    <a href="#input-format"><span class="sb-dot"></span>Input format</a>
+    <a href="#output-files"><span class="sb-dot"></span>Output files</a>
+    <a href="#custom-presenter"><span class="sb-dot"></span>Custom presenter</a>
+    <a href="#defaults"><span class="sb-dot"></span>Global defaults</a>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-kicker">XAI Human Evaluation Framework · Developer Guide</div>
+  <h1>XAI Tester<br><em>Developer Guide</em></h1>
+  <p class="hero-desc">
+    XAI Tester is a Python framework for running human-subject XAI evaluation experiments.
+    Participants review raw data, an AI prediction, a ground-truth outcome, and
+    feature-attribution explanations — then predict the AI's label.
+    The entire framework runs on three collaborating modules:
+    <strong>control</strong>, <strong>design</strong>, and <strong>io</strong>.
+  </p>
+  <div class="hero-chips">
+    <span class="hchip">Python ≥ 3.10</span>
+    <span class="hchip">zero dependencies</span>
+    <span class="hchip">58 tests passing</span>
+    <span class="hchip">CSV + summary output</span>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="section-header">
+    <span class="section-num">00</span>
+    <h2>Architecture</h2>
+  </div>
+
+  <p>The three modules have distinct, non-overlapping responsibilities. They collaborate through a shared <em>active experiment</em> object that is registered once and implicitly used by all subsequent calls.</p>
+
+  <div class="module-trio">
+    <div class="mod-card">
+      <div class="mod-num">01</div>
+      <div class="mod-name c">control</div>
+      <p>The <strong>director</strong>. Manages the entire session lifecycle — from initialisation to teardown — and orchestrates the other two modules in the correct order.</p>
+    </div>
+    <div class="mod-card">
+      <div class="mod-num">02</div>
+      <div class="mod-name d">design</div>
+      <p>The <strong>data layer</strong>. Defines the three-level hierarchy (Experiment → Session → Trial), loads CSV data, and handles feature-name and label mapping.</p>
+    </div>
+    <div class="mod-card">
+      <div class="mod-num">03</div>
+      <div class="mod-name i">io</div>
+      <p>The <strong>stage and archive</strong>. Renders each trial to participants, collects their typed response, measures reaction time, and writes all data to disk.</p>
+    </div>
+  </div>
+
+  <p>The precise boundary of each module's responsibilities:</p>
+
+  <div class="resp-grid">
+    <div class="resp-box">
+      <div class="resp-header c">control owns</div>
+      <div class="resp-body"><ul>
+        <li>Validating that trials have been loaded</li>
+        <li>Registering the global active-experiment reference</li>
+        <li>Prompting for participant ID</li>
+        <li>Triggering the instructions screen</li>
+        <li>Resetting the clock to session start</li>
+        <li>Writing files and cleaning up at the end</li>
+      </ul></div>
+    </div>
+    <div class="resp-box">
+      <div class="resp-header d">design owns</div>
+      <div class="resp-body"><ul>
+        <li>Parsing CSV columns into Trial objects</li>
+        <li>Mapping v0–v5 to readable feature names</li>
+        <li>Mapping integer y values to label strings</li>
+        <li>Shuffling trial order on load</li>
+        <li>Storing features, attributions, AI labels</li>
+        <li>Computing is_correct / ai_agrees</li>
+      </ul></div>
+    </div>
+    <div class="resp-box">
+      <div class="resp-header i">io owns</div>
+      <div class="resp-body"><ul>
+        <li>Rendering 4 display blocks per trial</li>
+        <li>Reading the participant's free-text input</li>
+        <li>Precisely measuring reaction time</li>
+        <li>Appending a CSV row on every answer</li>
+        <li>Generating the summary report at end</li>
+        <li>Providing a swappable display-backend interface</li>
+      </ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section id="quickstart">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <h2>Quick Start</h2>
+  </div>
+
+  <p>A complete wine-quality XAI evaluation session in a single script:</p>
+
+  <pre><span class="kw">from</span> xai_tester <span class="kw">import</span> control, design, io, misc
+
+<span class="cm"># ── 1. design: define structure, load data ───────────────────</span>
+exp = design.<span class="cl">Experiment</span>(
+    name   = <span class="st">"WineQuality_XAI"</span>,
+    labels = [<span class="st">"Bad Quality"</span>, <span class="st">"Good Quality"</span>],
+)
+exp.<span class="fn">load_csv_fixed</span>(
+    <span class="st">"wine_quality.csv"</span>,
+    feature_names = [<span class="st">"Vinegar Taint"</span>, <span class="st">"SO2"</span>, <span class="st">"pH"</span>,
+                     <span class="st">"Sulphates"</span>, <span class="st">"Alcohol"</span>, <span class="st">"Others"</span>],
+    label_map     = {<span class="nm">0</span>: <span class="st">"Bad Quality"</span>, <span class="nm">1</span>: <span class="st">"Good Quality"</span>},
+)
+
+<span class="cm"># ── 2. control: initialise, start session ────────────────────</span>
+control.<span class="fn">initialise</span>(exp)
+control.<span class="fn">start</span>(participant_id=<span class="st">"P01"</span>)
+
+<span class="cm"># ── 3. trial loop: io presents, collects, records ────────────</span>
+<span class="kw">for</span> i, trial <span class="kw">in</span> <span class="fn">enumerate</span>(exp.session.trials, start=<span class="nm">1</span>):
+    trial.presented_at = exp.clock.session_time
+
+    io.<span class="fn">present_trial</span>(trial,
+                     trial_number = i,
+                     total_trials = exp.session.n_trials,
+                     labels       = exp.labels)
+
+    exp.clock.<span class="fn">reset</span>()
+    response, rt = io.<span class="fn">get_response</span>(trial)
+    exp.data.<span class="fn">record</span>(trial, response, rt)
+
+<span class="cm"># ── 4. control: end, write summary ───────────────────────────</span>
+control.<span class="fn">end</span>()</pre>
+
+  <div class="callout info">
+    <p><strong>The golden rule:</strong> <strong>design</strong> comes first (define structure), <strong>control</strong> drives the flow (initialise → start → end), and <strong>io</strong> lives inside the loop (display → collect → record). The calling order is fixed and cannot be reversed.</p>
+  </div>
+</section>
+
+<!-- LIFECYCLE
+<section id="lifecycle">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <h2>The Five-Phase Lifecycle</h2>
+  </div>
+
+  <p>Every experiment session passes through five phases. <strong>design</strong> leads the first phase, <strong>control</strong> drives phases two, three and five, and the trial loop (phase four) is where all three modules collaborate.</p>
+
+  <div class="lifecycle">
+    <div class="lc-step d">
+      <div class="lc-num">01</div>
+      <div class="lc-name">Design</div>
+      <div class="lc-sub">design<br>build structure<br>load CSV</div>
+    </div>
+    <div class="lc-step c">
+      <div class="lc-num">02</div>
+      <div class="lc-name">Initialise</div>
+      <div class="lc-sub">control<br>validate<br>start clock</div>
+    </div>
+    <div class="lc-step c">
+      <div class="lc-num">03</div>
+      <div class="lc-name">Start</div>
+      <div class="lc-sub">control<br>participant ID<br>open files</div>
+    </div>
+    <div class="lc-step i">
+      <div class="lc-num">04</div>
+      <div class="lc-name">Run</div>
+      <div class="lc-sub">io<br>display → respond<br>→ record</div>
+    </div>
+    <div class="lc-step c">
+      <div class="lc-num">05</div>
+      <div class="lc-name">End</div>
+      <div class="lc-sub">control<br>write summary<br>clean up</div>
+    </div>
+  </div>
+
+  <h3>Data flow between modules</h3>
+
+  <div class="dataflow">
+    <div class="df-row">
+      <span class="df-box d">design.Experiment</span>
+      <span class="df-arrow">──load_csv_fixed()──→</span>
+      <span class="df-box d">list of Trials</span>
+      <span class="df-note">(feature names mapped, labels converted)</span>
+    </div>
+    <div class="df-row" style="margin-left:16px">
+      <span class="df-arrow">↓ initialise(exp)</span>
+    </div>
+    <div class="df-row">
+      <span class="df-box c">control</span>
+      <span class="df-arrow">──registers as global active experiment──→</span>
+      <span class="df-box c">_active_exp</span>
+      <span class="df-note">(start/pause/end use it implicitly)</span>
+    </div>
+    <div class="df-row" style="margin-left:16px">
+      <span class="df-arrow">↓ start()</span>
+    </div>
+    <div class="df-row">
+      <span class="df-box c">control</span>
+      <span class="df-arrow">──creates──→</span>
+      <span class="df-box i">DataRecorder</span>
+      <span class="df-arrow">+</span>
+      <span class="df-box d">Session</span>
+      <span class="df-note">(bound to exp.data / exp.session)</span>
+    </div>
+    <div class="df-row" style="margin-left:16px">
+      <span class="df-arrow">↓ trial loop</span>
+    </div>
+    <div class="df-row">
+      <span class="df-box i">io.present_trial()</span>
+      <span class="df-arrow">← reads →</span>
+      <span class="df-box d">trial.features / xai_scores / ai_label</span>
+    </div>
+    <div class="df-row">
+      <span class="df-box i">io.get_response()</span>
+      <span class="df-arrow">──(response, rt)──→</span>
+      <span class="df-box i">DataRecorder.record()</span>
+      <span class="df-arrow">──→</span>
+      <span class="df-box m">CSV file</span>
+    </div>
+    <div class="df-row" style="margin-left:16px">
+      <span class="df-arrow">↓ end()</span>
+    </div>
+    <div class="df-row">
+      <span class="df-box c">control</span>
+      <span class="df-arrow">──triggers──→</span>
+      <span class="df-box i">DataRecorder.save_summary()</span>
+      <span class="df-arrow">──→</span>
+      <span class="df-box m">summary.txt</span>
+    </div>
+  </div>
+</section> -->
+
+<!-- CONTROL -->
+<section id="control">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <h2><span class="h-control">control</span> — Session Flow</h2>
+  </div>
+
+  <p><code>xai_tester.control</code> is the framework's <strong>process orchestrator</strong>. It holds no experiment data and renders nothing directly. Its sole job is to invoke the other two modules in the right order at the right time.</p>
+
+  <p>Internally, the module maintains a single module-level variable <code>_active_exp</code>. Once <code>initialise(exp)</code> is called, the experiment is globally registered and every subsequent <code>control</code> function operates on it implicitly — no argument passing required.</p>
+
+  <div class="callout warn">
+    <p><strong>Single-instance constraint.</strong> Only one experiment can be active at a time. Calling <code>initialise()</code> twice on the same object raises <code>RuntimeError</code>. After <code>end()</code> completes, the active reference is cleared and a new session can begin.</p>
+  </div>
+
+  <h3>The four functions</h3>
+
+  <h4 class="c">initialise(experiment)</h4>
+  <p>The first lifecycle call. It does exactly three things: validates that at least one Trial has been loaded (raises <code>ValueError</code> otherwise), creates the session <code>Clock</code>, and registers <code>experiment</code> as <code>_active_exp</code>.</p>
+  <p>It does <strong>not</strong> create any output files and does not prompt for a participant ID — those happen in <code>start()</code>.</p>
+
+  <table>
+    <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">experiment</td><td class="dim">Experiment</td><td>The experiment to activate. Must have already called <code>load_csv()</code> or <code>load_csv_fixed()</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <pre><span class="cm"># Data must be loaded before initialising</span>
+exp = design.<span class="cl">Experiment</span>(name=<span class="st">"Demo"</span>)
+exp.<span class="fn">load_csv_fixed</span>(<span class="st">"data.csv"</span>, feature_names=[...], label_map={...})
+control.<span class="fn">initialise</span>(exp)   <span class="cm"># exp.clock is now available</span></pre>
+
+  <h4 class="c">start(participant_id, auto_id, skip_instructions)</h4>
+  <p>The true session launch point. Executes in sequence: obtain participant ID → create <code>Session</code> → create <code>DataRecorder</code> (which also creates the output directory on disk) → show instructions screen → reset clock to session start.</p>
+  <p>After this call, <code>exp.session</code>, <code>exp.data</code>, and <code>exp.clock</code> are all live and ready to use.</p>
+
+  <table>
+    <thead><tr><th>Parameter</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">participant_id</td><td class="dim">None</td><td>Explicit ID string or integer. If <code>None</code> and <code>auto_id=False</code>, prompts via terminal input.</td></tr>
+      <tr><td class="mono">auto_id</td><td class="dim">False</td><td>Auto-generate a timestamp-based ID: <code>auto_1704067200</code>.</td></tr>
+      <tr><td class="mono">skip_instructions</td><td class="dim">False</td><td>Skip the instructions screen — commonly used during development and testing.</td></tr>
+    </tbody>
+  </table>
+
+  <h4 class="c">pause(message)</h4>
+  <p>Insert a rest-break screen mid-session. Blocks until the participant presses Enter. Typically placed at the halfway point of the trial loop. Internally just calls <code>io.presenter.show_message(message)</code>.</p>
+
+  <pre><span class="kw">for</span> i, trial <span class="kw">in</span> <span class="fn">enumerate</span>(exp.session.trials, start=<span class="nm">1</span>):
+    <span class="cm"># ... trial logic ...</span>
+    <span class="kw">if</span> i == exp.session.n_trials // <span class="nm">2</span>:
+        control.<span class="fn">pause</span>(<span class="st">"Halfway done — take a short break!\n\nPress Enter to continue."</span>)</pre>
+
+  <h4 class="c">end(show_summary, goodbye_text)</h4>
+  <p>The session endpoint. Executes in sequence: record session end time → call <code>exp.data.save_summary()</code> → optionally print the summary to stdout → show goodbye screen → <strong>clear <code>_active_exp</code></strong>.</p>
+
+  <table>
+    <thead><tr><th>Parameter</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">show_summary</td><td class="dim">True</td><td>Print the summary report to stdout before the goodbye screen.</td></tr>
+      <tr><td class="mono">goodbye_text</td><td class="dim">None</td><td>Override <code>misc.defaults.goodbye_text</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <p><strong>Why does control hold no state of its own?</strong> The only state it tracks — <code>_active_exp</code> — is just a reference to the <code>design.Experiment</code> object. All experiment data lives in the design layer; all file operations belong to the io layer. This makes control a pure orchestrator that can be extended or replaced without touching either of the other modules.</p>
+  </div>
+</section>
+
+<!-- DESIGN -->
+<section id="design">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <h2><span class="h-design">design</span> — Data Layer</h2>
+  </div>
+
+  <p><code>xai_tester.design</code> is the framework's <strong>data layer</strong>. It defines the three-level hierarchy, loads and parses experiment data, and exposes computed properties that the other modules consume.</p>
+
+  <h3>Three-level hierarchy</h3>
+
+  <pre><span class="cl">Experiment</span>         <span class="cm"># top-level container: config + all Trials</span>
+  └── <span class="cl">Session</span>      <span class="cm"># single run: one participant's complete session</span>
+        └── <span class="cl">Trial</span>  <span class="cm"># single trial: one CSV row's full state</span></pre>
+
+  <h3>class Experiment</h3>
+  <p>The top-level container, constructed before <code>control.initialise()</code> and used for the lifetime of the script. Holds all Trial objects and, after <code>control.start()</code>, exposes <code>session</code>, <code>data</code>, and <code>clock</code>.</p>
+
+  <pre>exp = design.<span class="cl">Experiment</span>(
+    name             = <span class="st">"WineQuality_XAI"</span>,
+    labels           = [<span class="st">"Bad Quality"</span>, <span class="st">"Good Quality"</span>],
+    filename_suffix  = <span class="st">"pilot"</span>,          <span class="cm"># appended to output filenames</span>
+    randomise_trials = <span class="kw">True</span>,             <span class="cm"># shuffle on load</span>
+)</pre>
+
+  <h4 class="d">Three loading methods</h4>
+
+  <table>
+    <thead><tr><th>Method</th><th>When to use</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="mono">load_csv_fixed()</td>
+        <td>Standard input: CSV with <code>y</code>, <code>v0</code>–<code>v5</code>, <code>a0</code>–<code>a5</code> columns. <strong>Recommended for all new experiments.</strong></td>
+      </tr>
+      <tr>
+        <td class="mono">load_fixed_format()</td>
+        <td>You already have a list of dicts in memory (e.g. after manually parsing a <code>.numbers</code> file) — uses the same y/v/a convention.</td>
+      </tr>
+      <tr>
+        <td class="mono">load_csv()</td>
+        <td>Flexible mode: arbitrary column names, with explicit <code>ai_label_col</code>, <code>xai_cols</code>, <code>feature_cols</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><strong>How <code>load_csv_fixed</code> maps columns to Trial attributes:</strong></p>
+
+  <pre><span class="cm"># CSV column    →  key used inside Trial</span>
+<span class="cm"># y             →  trial.ai_label           (converted via label_map)</span>
+<span class="cm"># v0            →  trial.features["Vinegar Taint"]</span>
+<span class="cm"># v1            →  trial.features["SO2"]</span>
+<span class="cm"># ...           →  ...</span>
+<span class="cm"># a0            →  trial.xai_scores["Vinegar Taint"]</span>
+<span class="cm"># a1            →  trial.xai_scores["SO2"]</span>
+<span class="cm"># ...           →  ...</span>
+
+exp.<span class="fn">load_csv_fixed</span>(
+    <span class="st">"wine_quality.csv"</span>,
+    feature_names    = [<span class="st">"Vinegar Taint"</span>, <span class="st">"SO2"</span>, <span class="st">"pH"</span>,
+                        <span class="st">"Sulphates"</span>, <span class="st">"Alcohol"</span>, <span class="st">"Others"</span>],
+    label_map        = {<span class="nm">0</span>: <span class="st">"Bad Quality"</span>, <span class="nm">1</span>: <span class="st">"Good Quality"</span>},
+    ground_truth_col = <span class="st">"gt"</span>,   <span class="cm"># optional: real-world outcome column</span>
+    max_rows         = <span class="nm">20</span>,     <span class="cm"># optional: load only the first N rows</span>
+)</pre>
+
+  <h3>class Trial</h3>
+  <p>The core data structure of the design layer. Each instance maps to one CSV row and simultaneously carries <em>display data</em> (read by the io module) and <em>response data</em> (written by the io module).</p>
+
+  <table>
+    <thead><tr><th>Attribute</th><th>Type</th><th>Source</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">trial.features</td><td class="dim">dict</td><td>v0–v5</td><td>Raw feature values, keyed by the readable names in <code>feature_names</code>. Displayed to participants in the Original Data block.</td></tr>
+      <tr><td class="mono">trial.xai_scores</td><td class="dim">dict[str,float]</td><td>a0–a5</td><td>Attribution scores, same keys. Positive = pushes toward positive class; negative = pushes away.</td></tr>
+      <tr><td class="mono">trial.ai_label</td><td class="dim">str</td><td>y column</td><td>AI predicted label (converted via <code>label_map</code>). Shown to participants and used for scoring.</td></tr>
+      <tr><td class="mono">trial.ground_truth</td><td class="dim">str | None</td><td>optional col</td><td>Real-world outcome. Shown alongside the AI label with ✓/✗. <code>None</code> if not provided.</td></tr>
+      <tr><td class="mono">trial.response</td><td class="dim">str | None</td><td>written by io</td><td>Participant's typed answer. <code>None</code> until recorded.</td></tr>
+      <tr><td class="mono">trial.response_time</td><td class="dim">float | None</td><td>written by io</td><td>Reaction time in seconds, from prompt display to Enter.</td></tr>
+      <tr><td class="mono">trial.presented_at</td><td class="dim">float | None</td><td>set manually</td><td>Session-clock value when the trial appeared. Set in the loop: <code>trial.presented_at = exp.clock.session_time</code></td></tr>
+    </tbody>
+  </table>
+
+  <h4 class="d">Two computed properties</h4>
+
+  <table>
+    <thead><tr><th>Property</th><th>Returns</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="mono">trial.is_correct</td>
+        <td class="dim">bool | None</td>
+        <td>Whether the participant's response matches <code>ai_label</code> (case-insensitive). Returns <code>None</code> before any response is recorded. Measures <em>how well participants can predict the AI's decision</em>.</td>
+      </tr>
+      <tr>
+        <td class="mono">trial.ai_agrees</td>
+        <td class="dim">bool | None</td>
+        <td>Whether <code>ai_label</code> matches <code>ground_truth</code>. Returns <code>None</code> when no ground truth was provided. Measures <em>the AI's own accuracy</em>, and enables the key cross-analysis with <code>is_correct</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <p><strong>Why the cross-analysis matters.</strong> The summary report splits participant accuracy into two groups: trials where the AI was correct, and trials where it was wrong. If participants are worse at predicting the AI's label precisely when the AI itself was wrong, it indicates the XAI explanation failed to flag the AI's errors — the most important finding in XAI human-evaluation research.</p>
+  </div>
+
+  <h3>class Session</h3>
+  <p>Created automatically by <code>control.start()</code>. Access via <code>exp.session</code>. A runtime container for the Trial list; holds no raw data, just progress and timing information.</p>
+
+  <table>
+    <thead><tr><th>Property</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">session.trials</td><td>Ordered list of Trial objects — iterate this to drive the trial loop.</td></tr>
+      <tr><td class="mono">session.n_trials</td><td>Total number of trials.</td></tr>
+      <tr><td class="mono">session.n_completed</td><td>Number of trials with a recorded response (updates in real time).</td></tr>
+      <tr><td class="mono">session.duration</td><td>Total session time in seconds; <code>None</code> until <code>control.end()</code> is called.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- IO -->
+<section id="io">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <h2><span class="h-io">io</span> — Display &amp; Record</h2>
+  </div>
+
+  <p><code>xai_tester.io</code> is the framework's <strong>perception and recording layer</strong>. It handles two very different but complementary jobs: <strong>outward display</strong> (showing trial content to participants) and <strong>inward recording</strong> (persisting their answers to disk).</p>
+
+  <p>The display side is implemented via a swappable <code>presenter</code> object; the recording side via a <code>DataRecorder</code>. The two are independently designed and do not depend on each other.</p>
+
+  <h3>Display: present_trial() and get_response()</h3>
+
+  <p>These two module-level functions are the most-used interfaces inside the trial loop. Both are thin wrappers around <code>io.presenter</code>:</p>
+
+  <pre><span class="cm"># Display the trial (four blocks)</span>
+io.<span class="fn">present_trial</span>(
+    trial,
+    trial_number = i,
+    total_trials = n,
+    labels       = exp.labels,  <span class="cm"># optional: show label hint line</span>
+    bar_width    = <span class="nm">28</span>,          <span class="cm"># character width of ASCII attribution bars</span>
+)
+
+<span class="cm"># Collect response + measure reaction time</span>
+response, rt = io.<span class="fn">get_response</span>(
+    trial,
+    timeout = <span class="nm">30</span>,   <span class="cm"># seconds; None = wait indefinitely</span>
+)
+<span class="cm"># response: stripped string, e.g. "Good Quality"</span>
+<span class="cm"># rt:       float seconds from prompt display to Enter</span></pre>
+
+  <h4 class="i">The four blocks rendered per trial</h4>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>
+      <span class="terminal-label">terminal — trial display example</span>
+    </div>
+    <div class="terminal-body">
+<span class="t-cyan">════════════════════════════════════════════</span><br>
+<span class="t-bold">  Trial 3 / 20</span><br>
+<span class="t-cyan">────────────────────────────────────────────</span><br>
+<br>
+<span class="t-yellow">  ORIGINAL DATA</span><br>
+<span class="t-dim">────────────────────────────────────────────</span><br>
+  <span class="t-cyan">Vinegar Taint  </span>0.58<br>
+  <span class="t-cyan">SO2            </span>37.9<br>
+  <span class="t-cyan">pH             </span>2.99<br>
+  <span class="t-cyan">Sulphates      </span>0.42<br>
+  <span class="t-cyan">Alcohol        </span>10.3<br>
+  <span class="t-cyan">Others         </span>4.99<br>
+<br>
+<span class="t-yellow">  AI PREDICTION</span><br>
+<span class="t-dim">────────────────────────────────────────────</span><br>
+  <span class="t-green">┌────────────────────────┐</span><br>
+  <span class="t-green">│  Bad Quality           │</span><br>
+  <span class="t-green">└────────────────────────┘</span><br>
+  <span class="t-green">Ground truth:  Bad Quality  ✓</span><br>
+<br>
+<span class="t-yellow">  XAI EXPLANATION  (why did the AI predict this?)</span><br>
+<span class="t-dim">────────────────────────────────────────────</span><br>
+  <span class="t-dim">← pushes away from positive class   |   pushes toward →</span><br>
+<br>
+  <span class="t-cyan">Alcohol        </span><span class="t-bar-r">░░░░░░░░░░░░░████████</span>  -0.1762<br>
+  <span class="t-cyan">pH             </span><span class="t-bar-r">░░░░░░░░░░░░░░░░░████</span>  -0.0356<br>
+  <span class="t-cyan">Vinegar Taint  </span><span class="t-bar-r">░░░░░░░░░░░░░░░░░████</span>  -0.0327<br>
+  <span class="t-cyan">Sulphates      </span><span class="t-bar-r">░░░░░░░░░░░░░░░░░░░██</span>  -0.0468<br>
+  <span class="t-cyan">SO2            </span><span class="t-bar-g">███░░░░░░░░░░░░░░░░░░</span>  +0.0133<br>
+  <span class="t-cyan">Others         </span><span class="t-bar-r">░░░░░░░░░░░░░░░░░░░░█</span>  -0.0161<br>
+<br>
+<span class="t-dim">────────────────────────────────────────────</span><br>
+  Possible labels: <span class="t-yellow">[Bad Quality]</span>, <span class="t-yellow">[Good Quality]</span><br>
+<br>
+  <span class="t-bold">▶ Your prediction: </span>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>#</th><th>Block</th><th>Data source</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">1</td><td><strong>Header</strong></td><td>trial_number, total_trials</td><td>Progress indicator — lets participants know how many trials remain.</td></tr>
+      <tr><td class="mono">2</td><td><strong>Original Data</strong></td><td>trial.features</td><td>Raw feature values displayed as a labelled table using readable feature names.</td></tr>
+      <tr><td class="mono">3</td><td><strong>AI Prediction</strong></td><td>trial.ai_label + trial.ground_truth</td><td>AI label in a highlighted box. If ground_truth is available, shows ✓/✗ on the line below.</td></tr>
+      <tr><td class="mono">4</td><td><strong>XAI Explanation</strong></td><td>trial.xai_scores</td><td>Two-sided ASCII bar chart sorted by |attribution|. Green = positive contribution; red = negative.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Recording: DataRecorder</h3>
+
+  <p>Accessed as <code>exp.data</code> after <code>control.start()</code>. Every call to <code>record()</code> <strong>immediately appends one row to the CSV</strong>, so a mid-session crash never loses data from completed trials.</p>
+
+  <table>
+    <thead><tr><th>Method / Property</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">data.record(trial, response, rt)</td><td>Writes response and rt to the trial object and immediately appends a CSV row.</td></tr>
+      <tr><td class="mono">data.save_summary()</td><td>Generates the summary report (.txt) and returns its path. Called automatically by <code>control.end()</code>.</td></tr>
+      <tr><td class="mono">data.csv_path</td><td>Path object pointing to the response CSV. Determined at <code>start()</code> time.</td></tr>
+      <tr><td class="mono">data.summary_path</td><td>Path object pointing to the summary report. Determined at <code>start()</code> time.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The swappable presenter interface</h3>
+
+  <p><code>io.presenter</code> is a global variable that defaults to <code>TerminalPresenter()</code>. Replacing it with any <code>BasePresenter</code> subclass switches the display backend — web page, GUI, tablet — without any changes to the trial loop.</p>
+
+  <pre><span class="kw">from</span> xai_tester.io._presenter <span class="kw">import</span> <span class="cl">BasePresenter</span>
+<span class="kw">import</span> xai_tester.io <span class="kw">as</span> xio
+
+<span class="kw">class</span> <span class="cl">WebPresenter</span>(<span class="cl">BasePresenter</span>):
+
+    <span class="kw">def</span> <span class="fn">show_trial</span>(<span class="df">self</span>, trial, trial_number, total_trials,
+                   labels=<span class="kw">None</span>, bar_width=<span class="nm">30</span>):
+        <span class="cm"># Render trial data as an HTML page and push to browser</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">get_response</span>(<span class="df">self</span>, trial, timeout=<span class="kw">None</span>) -> tuple[str, float]:
+        <span class="cm"># Wait for HTTP POST; return (response_string, rt_seconds)</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">show_message</span>(<span class="df">self</span>, text: str):
+        <span class="cm"># Serve a plain text page</span>
+        ...
+
+    <span class="kw">def</span> <span class="fn">clear</span>(<span class="df">self</span>):
+        <span class="kw">pass</span>   <span class="cm"># no-op for web</span>
+
+<span class="cm"># Assign before the loop — nothing else changes</span>
+xio.presenter = <span class="cl">WebPresenter</span>()</pre>
+
+  <div class="callout info">
+    <p><strong><code>get_response()</code> contract:</strong> must return a <code>(str, float)</code> tuple — the stripped response string and the reaction time in seconds. Return an empty string <code>""</code> on timeout (which makes <code>trial.is_correct</code> evaluate to <code>False</code>).</p>
+  </div>
+</section>
+
+<!-- INPUT FORMAT -->
+<section id="input-format">
+  <div class="section-header">
+    <span class="section-num">06</span>
+    <h2>Input Format</h2>
+  </div>
+
+  <p>XAI Tester expects a fixed column-naming convention. Each row is one trial:</p>
+
+  <table>
+    <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">y</td><td class="dim">int</td><td>AI predicted label as an integer code (e.g. 0/1). Converted to a display string via <code>label_map</code> and stored in <code>trial.ai_label</code>.</td></tr>
+      <tr><td class="mono">v0–v5</td><td class="dim">any</td><td>Raw feature values. Mapped positionally to the names in <code>feature_names</code>.</td></tr>
+      <tr><td class="mono">a0–a5</td><td class="dim">float</td><td>Feature attribution scores (SHAP / LIME output). Positive = pushes toward positive class; negative = pushes away. Must be convertible to float.</td></tr>
+      <tr><td class="mono">gt (optional)</td><td class="dim">int/str</td><td>Real-world outcome. Specify the column name via <code>ground_truth_col="gt"</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <pre><span class="cm"># Example CSV header (wine quality dataset)</span>
+y,v0,v1,v2,v3,v4,v5,a0,a1,a2,a3,a4,a5
+<span class="nm">1</span>,<span class="nm">0.44</span>,<span class="nm">16.0</span>,<span class="nm">3.55</span>,<span class="nm">0.39</span>,<span class="nm">11.4</span>,<span class="nm">6.43</span>,<span class="nm">0.0775</span>,<span class="nm">-0.0335</span>,<span class="nm">0.1186</span>,<span class="nm">-0.0575</span>,<span class="nm">0.1038</span>,<span class="nm">0.0083</span>
+<span class="nm">0</span>,<span class="nm">0.58</span>,<span class="nm">37.9</span>,<span class="nm">2.99</span>,<span class="nm">0.42</span>,<span class="nm">10.3</span>,<span class="nm">4.99</span>,<span class="nm">-0.0327</span>,<span class="nm">0.0133</span>,<span class="nm">-0.0356</span>,<span class="nm">-0.0468</span>,<span class="nm">-0.1762</span>,<span class="nm">-0.0161</span></pre>
+
+  <p>For Apple Numbers files (<code>input_values.numbers</code>), convert first using the bundled utility:</p>
+
+  <pre><span class="cm"># Requires: pip install numbers-parser</span>
+python numbers_to_csv.py input_values.numbers output.csv
+python wine_quality_study.py --csv output.csv</pre>
+</section>
+
+<!-- OUTPUT FILES -->
+<section id="output-files">
+  <div class="section-header">
+    <span class="section-num">07</span>
+    <h2>Output Files</h2>
+  </div>
+
+  <p>Two files are written to <code>xai_results/</code> (configurable via <code>misc.defaults.data_directory</code>). Both share the stem <code>&lt;experiment_name&gt;_&lt;participant_id&gt;_&lt;YYYYMMDD_HHMMSS&gt;</code>.</p>
+
+  <h3>Response CSV (.csv)</h3>
+  <p>One row appended per completed trial — immediately after <code>data.record()</code> is called. A mid-session crash loses no data from completed trials.</p>
+
+  <table>
+    <thead><tr><th>Column</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ai_label</td><td>AI predicted label for this trial.</td></tr>
+      <tr><td class="mono">ground_truth</td><td>Real-world outcome. Empty string if not provided.</td></tr>
+      <tr><td class="mono">ai_agrees</td><td>"True" / "False" / "" — whether the AI was correct.</td></tr>
+      <tr><td class="mono">response</td><td>Participant's typed prediction (stripped).</td></tr>
+      <tr><td class="mono">is_correct</td><td>"True" / "False" — whether the participant matched the AI label.</td></tr>
+      <tr><td class="mono">response_time_s</td><td>Reaction time in seconds.</td></tr>
+      <tr><td class="mono">feat_*</td><td>Original feature values, prefixed <code>feat_</code>.</td></tr>
+      <tr><td class="mono">xai_*</td><td>Attribution scores, prefixed <code>xai_</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Summary report (_summary.txt)</h3>
+  <p>Written by <code>control.end()</code>. Contains up to seven sections:</p>
+
+  <table>
+    <thead><tr><th>Section</th><th>Condition</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Session header</strong></td><td>Always</td><td>Experiment name, participant ID, trial counts, session duration.</td></tr>
+      <tr><td><strong>Participant accuracy</strong></td><td>Always</td><td>Correct / incorrect counts and percentage.</td></tr>
+      <tr><td><strong>AI model accuracy</strong></td><td>When ground_truth present</td><td>How often the AI label matched ground truth.</td></tr>
+      <tr><td><strong>Accuracy by AI correctness</strong></td><td>When AI has both right and wrong trials</td><td>Participant accuracy on AI-correct vs AI-incorrect trials — the primary XAI research metric.</td></tr>
+      <tr><td><strong>Response times</strong></td><td>Always</td><td>Mean, median, SD, min, max (seconds).</td></tr>
+      <tr><td><strong>Per-label breakdown</strong></td><td>Always</td><td>Trial count, participant accuracy, and mean RT per AI label class.</td></tr>
+      <tr><td><strong>Top features by importance</strong></td><td>Always</td><td>Features ranked by mean absolute attribution score across all trials (up to 10).</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- CUSTOM PRESENTER -->
+<section id="custom-presenter">
+  <div class="section-header">
+    <span class="section-num">08</span>
+    <h2>Custom Presenter</h2>
+  </div>
+
+  <p>The default terminal display is ideal for local experiments. For a web interface, iPad deployment, or any other display surface, subclass <code>BasePresenter</code>, assign it to <code>xai_tester.io.presenter</code>, and the trial loop code remains <strong>completely unchanged</strong>.</p>
+
+  <p><code>BasePresenter</code> requires four methods to be implemented:</p>
+
+  <table>
+    <thead><tr><th>Method</th><th>Responsibility</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">show_trial(trial, trial_number, total_trials, labels, bar_width)</td><td>Render the complete four-block trial display.</td></tr>
+      <tr><td class="mono">get_response(trial, timeout) → (str, float)</td><td>Wait for input; return (response, reaction_time_seconds).</td></tr>
+      <tr><td class="mono">show_message(text)</td><td>Display a plain-text message and block until Enter.</td></tr>
+      <tr><td class="mono">clear()</td><td>Clear the current display.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- DEFAULTS -->
+<section id="defaults">
+  <div class="section-header">
+    <span class="section-num">09</span>
+    <h2>Global Defaults</h2>
+  </div>
+
+  <p>All configurable parameters live in <code>xai_tester.misc.defaults</code>. Override any value before calling <code>control.initialise()</code>:</p>
+
+  <pre>d = xai_tester.misc.defaults
+
+d.response_timeout       = <span class="nm">30</span>      <span class="cm"># per-trial timeout (seconds); None = unlimited</span>
+d.pause_between_trials   = <span class="nm">0.4</span>     <span class="cm"># blank-screen pause between trials (seconds)</span>
+d.importance_bar_width   = <span class="nm">28</span>      <span class="cm"># character width of ASCII attribution bars</span>
+d.instructions_text      = <span class="st">"..."</span>  <span class="cm"># shown before the session starts</span>
+d.ready_prompt           = <span class="st">"..."</span>  <span class="cm"># appended below instructions_text</span>
+d.goodbye_text           = <span class="st">"..."</span>  <span class="cm"># shown at session end</span>
+d.data_directory         = <span class="st">"results"</span>
+d.summary_decimal_places = <span class="nm">3</span>       <span class="cm"># numeric precision in the summary report</span></pre>
+</section>
+
+</main>
+</div>
+
+<script>
+const secs  = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('aside a[href^="#"]');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    links.forEach(l => l.classList.remove('active'));
+    const a = document.querySelector(`aside a[href="#${e.target.id}"]`);
+    if (a) a.classList.add('active');
+  });
+}, { rootMargin: '-15% 0px -70% 0px' });
+secs.forEach(s => obs.observe(s));
+</script>
+</body>
+</html>
