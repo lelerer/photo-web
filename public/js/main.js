@@ -12,7 +12,7 @@
 
 'use strict';
 
-$(window).on('load', function() {
+$(window).on('load', function () {
 	/*------------------
 		Preloder
 	--------------------*/
@@ -27,21 +27,21 @@ $(window).on('load', function() {
 		dots: false,
 		loop: true,
 		autoplay: true,
-		responsive : {
-			0 : {
+		responsive: {
+			0: {
 				items: 3,
 			},
-			480 : {
+			480: {
 				items: 4,
-				
+
 			},
-			768 : {
+			768: {
 				items: 5,
 			},
-			991 : {
+			991: {
 				items: 6,
 			},
-			1200 : {
+			1200: {
 				items: 7,
 			}
 		}
@@ -61,40 +61,40 @@ $(window).on('load', function() {
 	/*---------------
 		Mixitup
 	----------------*/
-	masonryLayout();
-	if($('.portfolio-gallery').length > 0 ) {
-		var containerEl = document.querySelector('.portfolio-gallery');
-		var mixer = mixitup(containerEl, {
-			callbacks: {
-				onMixEnd: function() {
-					masonryLayout();
-				}
-			}
-		});
-	}
+	// masonryLayout();
+	// if ($('.portfolio-gallery').length > 0) {
+	// 	var containerEl = document.querySelector('.portfolio-gallery');
+	// 	var mixer = mixitup(containerEl, {
+	// 		callbacks: {
+	// 			onMixEnd: function () {
+	// 				masonryLayout();
+	// 			}
+	// 		}
+	// 	});
+	// }
 });
 
-(function($) {
+(function ($) {
 	/*------------------
 		Navigation
 	--------------------*/
 	$('.main-menu').slicknav({
-		appendTo:'.header-section',
+		appendTo: '.header-section',
 		closedSymbol: '<i class="fa fa-angle-down"></i>',
 		openedSymbol: '<i class="fa fa-angle-up"></i>'
 	});
 
-	$('.nav-switch-btn').on('click', function() {
-		if(localStorage.getItem("navMenu") == null) {
+	$('.nav-switch-btn').on('click', function () {
+		if (localStorage.getItem("navMenu") == null) {
 			localStorage.setItem("navMenu", "show");
 			$('.main-menu').slideDown(400);
-		} else if(localStorage.getItem("navMenu") == "show") {
+		} else if (localStorage.getItem("navMenu") == "show") {
 			localStorage.removeItem("navMenu");
 			$('.main-menu').slideUp(400);
 		}
 	});
 
-	if(localStorage.getItem("navMenu") == "show") {
+	if (localStorage.getItem("navMenu") == "show") {
 		$('.main-menu').slideDown(400);
 	}
 
@@ -102,71 +102,28 @@ $(window).on('load', function() {
 	/*------------------
 		Search model
 	--------------------*/
-	$('.search-btn').on('click', function() {
+	$('.search-btn').on('click', function () {
 		$('.search-model').fadeIn(400);
 	});
 
-	$('.search-close-switch').on('click', function() {
-		$('.search-model').fadeOut(400,function(){
+	$('.search-close-switch').on('click', function () {
+		$('.search-model').fadeOut(400, function () {
 			$('#search-input').val('');
 		});
 	});
-
-
-	/*------------------
-		Background Set
-	--------------------*/
-	$('.set-bg').each(function() {
-		var bg = $(this).data('setbg');
-		$(this).css('background-image', 'url(' + bg + ')');
-	});
-
-
-	/*------------------
-		Hero Slider
-	--------------------*/
-	$('.hero-slider').owlCarousel({
-		nav: false,
-		dots: false,
-		loop: true,
-		autoplay: true,
-		smartSpeed: 1000,
-		responsive : {
-			0 : {
-				items: 1,
-			},
-			480 : {
-				items: 2,
-				
-			},
-			768 : {
-				items: 3,
-			},
-			991 : {
-				items: 4,
-			},
-			1200 : {
-				items: 5,
-			},
-			1400 : {
-				items: 7,
-			}
-		}
-	});
-
 
 	/*----------------------
 		Portfolio item size
 	------------------------*/
 	var PorfolioItemFix = function () {
-		$( ".portfolio-item" ).each(function( index ) {
+		$(".portfolio-item").each(function (index) {
 			var portfolioItem = $(this);
 			var PIheight = portfolioItem.width();
-			portfolioItem.css('height',PIheight);
+			portfolioItem.css('height', PIheight);
 		});
 	}
 	PorfolioItemFix();
-	$(window).on('resize',function(){
+	$(window).on('resize', function () {
 		PorfolioItemFix();
 	});
 
@@ -179,12 +136,12 @@ $(window).on('load', function() {
 		mainClass: 'img-popup-warp',
 		removalDelay: 500,
 	});
-	
+
 
 	/*------------------
 		Progress Bar
 	--------------------*/
-	$('.progress-bar-style').each(function() {
+	$('.progress-bar-style').each(function () {
 		var progress = $(this).data("progress");
 		var prog_width = progress + '%';
 		if (progress <= 100) {
@@ -212,13 +169,13 @@ $(window).on('load', function() {
 	/*------------------
 		Circle progress
 	--------------------*/
-	$('.circle-progress').each(function() {
+	$('.circle-progress').each(function () {
 		var cpvalue = $(this).data("cpvalue");
 		var cpcolor = $(this).data("cpcolor");
 		var cptitle = $(this).data("cptitle");
-		var cpid 	= $(this).data("cpid");
+		var cpid = $(this).data("cpid");
 
-		$(this).append('<div class="'+ cpid +'"></div><div class="progress-info"><h2>'+ cpvalue +'%</h2><p>'+ cptitle +'</p></div>');
+		$(this).append('<div class="' + cpid + '"></div><div class="progress-info"><h2>' + cpvalue + '%</h2><p>' + cptitle + '</p></div>');
 
 		if (cpvalue < 100) {
 
@@ -246,18 +203,18 @@ $(window).on('load', function() {
 		Instafeed
 	--------------------*/
 	var userFeed = new Instafeed({
-        get: 'user',
-        userId: '19261155319', // User your ID
-        limit: 12,
-        resolution: 'standard_resolution',
-        accessToken: '19261155319.1677ed0.3640b426adf9468daaa26b64b1496040', // User your accessToken
+		get: 'user',
+		userId: '19261155319', // User your ID
+		limit: 12,
+		resolution: 'standard_resolution',
+		accessToken: '19261155319.1677ed0.3640b426adf9468daaa26b64b1496040', // User your accessToken
 		sortBy: 'least-recent',
 		limit: 15,
-        template: '<div class="instaimg"><a href="{{link}}" title="{{caption}}" target="_blank"><img src="{{image}}" alt="{{caption}}" class="img-fluid"/></a></div>',
+		template: '<div class="instaimg"><a href="{{link}}" title="{{caption}}" target="_blank"><img src="{{image}}" alt="{{caption}}" class="img-fluid"/></a></div>',
 	});
-	
-	if($('#instafeed').length > 0) {
+
+	if ($('#instafeed').length > 0) {
 		userFeed.run();
 	}
-	
+
 })(jQuery);

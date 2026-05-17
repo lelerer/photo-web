@@ -1,0 +1,66 @@
+<!-- 把这段替换掉原来的 Hero section -->
+
+<!-- Hero section  -->
+<div class="hero-section" id="hero-section">
+  <!-- 由 JS 动态渲染，不需要手动写任何 hero-item -->
+</div>
+<!-- Hero section end  -->
+
+<!-- 在原来那些 <script src="..."> 的后面，main.js 之前，加上这段 -->
+<script>
+  const DEFAULT_TITLE = "Take a look at my Portfolio";
+
+  fetch('photos.json')
+    .then(res => res.json())
+    .then(photos => {
+      const heroSection = document.getElementById('hero-section');
+
+      // 按 row 分组
+      const rows = {};
+      photos.forEach(p => {
+        if (!rows[p.row]) rows[p.row] = [];
+        rows[p.row].push(p);
+      });
+
+      // 按 row 顺序渲染
+      Object.keys(rows).sort((a, b) => a - b).forEach(rowKey => {
+        const slider = document.createElement('div');
+        slider.className = 'hero-slider owl-carousel';
+
+        rows[rowKey].forEach(photo => {
+          const title = photo.title || DEFAULT_TITLE;
+          const item = document.createElement('div');
+          item.className = 'hero-item portfolio-item set-bg';
+          item.setAttribute('data-setbg', photo.img);
+          item.innerHTML = `<a href="${photo.link}" class="hero-link"><h2>${title}</h2></a>`;
+          slider.appendChild(item);
+        });
+
+        heroSection.appendChild(slider);
+      });
+
+      // 渲染完成后初始化 owl carousel 和 set-bg
+      // （触发 main.js 里的逻辑）
+      initHero();
+    });
+
+  function initHero() {
+    // 设置背景图
+    $('.set-bg').each(function () {
+      var bg = $(this).data('setbg');
+      $(this).css('background-image', 'url(' + bg + ')');
+    });
+
+    // 初始化所有 owl-carousel
+    $('.hero-slider').owlCarousel({
+      loop: true,
+      margin: 0,
+      items: 1,
+      dots: false,
+      nav: false,
+      autoplay: true,
+      autoplayTimeout: 5000,
+      smartSpeed: 500,
+    });
+  }
+</script>
