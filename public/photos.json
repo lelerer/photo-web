@@ -36,8 +36,8 @@
 
   { "row": 4, "img": "img/portfolio/39.jpg", "link": "portfolio.html", "tags": ["mm"] },
   { "row": 4, "img": "img/portfolio/12.jpg", "title": "She dives!", "link": "sheDives.html", "tags": ["mm"] },
-  { "row": 4, "img": "img/portfolio/79.jpg", "link": "portfolio.html", "tags": ["mm"] },
   { "row": 4, "img": "img/portfolio/77.jpg", "link": "portfolio.html", "tags": ["mm"] },
+  { "row": 4, "img": "img/portfolio/79.jpg", "link": "portfolio.html", "tags": ["mm"] },
   { "row": 4, "img": "img/portfolio/80.jpg", "link": "portfolio.html", "tags": ["mm"] },
   { "row": 4, "img": "img/portfolio/48.jpg", "link": "portfolio.html", "tags": ["mm"] },
   { "row": 4, "img": "img/portfolio/52.jpg", "link": "portfolio.html", "tags": ["mm"] },
@@ -47,8 +47,8 @@
   { "row": 4, "img": "img/portfolio/70.jpg", "link": "portfolio.html", "tags": ["mm"] },
 
   { "row": 5, "img": "img/portfolio/31.jpg", "link": "portfolio.html", "tags": ["mm"] },
-  { "row": 5, "img": "img/portfolio/78.jpg", "link": "portfolio.html", "tags": ["mm"] },
   { "row": 5, "img": "img/portfolio/32.jpg", "link": "portfolio.html", "tags": ["mm"] },
+  { "row": 5, "img": "img/portfolio/78.jpg", "link": "portfolio.html", "tags": ["mm"] },
   { "row": 5, "img": "img/portfolio/35.jpg", "link": "portfolio.html", "tags": ["mm"] },
   { "row": 5, "img": "img/portfolio/37.jpg", "title": "Home, at some point", "link": "write1.html", "tags": ["mm", "story"] },
   { "row": 5, "img": "img/portfolio/72.jpg", "link": "portfolio.html", "tags": ["mm"] },
