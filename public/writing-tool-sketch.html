@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Writing Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f0ede6;--surface:#fff;--s2:#f7f5f1;--s3:#ede9e2;
+  --bd:rgba(0,0,0,0.09);--bd2:rgba(0,0,0,0.16);
+  --tx:#1a1917;--tx2:#5a5750;--tx3:#9a9690;
+  --accent:#7a5a2e;--accent-bg:rgba(122,90,46,0.08);
+  --bs:#ddeef8;--bt:#1a5a82;
+  --cs:#ece8f8;--ct:#4a2d8a;
+  --ps:#dff0e8;--pt:#1a5a38;
+  --ts:#fdf0d8;--tt:#7a4a0a;
+  --ds:#fce8e8;--dt:#8a2a2a;
+}
+body{background:var(--bg);color:var(--tx);font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.6;padding:32px 24px 48px;}
+
+.page-header{display:flex;align-items:baseline;gap:12px;margin-bottom:24px;}
+.page-title{font-family:'Lora',serif;font-size:22px;font-weight:600;letter-spacing:-0.02em;}
+.page-sub{font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;}
+
+/* ── Shell ── */
+.app{display:grid;grid-template-columns:1fr 188px 300px;gap:1px;background:var(--bd2);border:1px solid var(--bd2);border-radius:10px;overflow:hidden;height:640px;}
+.panel{background:var(--surface);display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+.ph{padding:10px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--s2);}
+.pn{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;}
+.pd{font-size:10px;color:var(--tx3);font-family:'DM Mono',monospace;}
+
+/* ══════════════════════ CANVAS ══════════════════════ */
+.canvas-wrap{flex:1;position:relative;overflow:hidden;background:var(--surface);}
+
+/* Grid dot background */
+.canvas-wrap::before{
+  content:'';position:absolute;inset:0;
+  background-image:radial-gradient(circle,rgba(0,0,0,0.12) 1px,transparent 1px);
+  background-size:20px 20px;
+  pointer-events:none;
+}
+
+/* Toolbar */
+.canvas-toolbar{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  display:flex;gap:4px;z-index:20;
+  background:var(--surface);border:1px solid var(--bd2);
+  border-radius:20px;padding:4px 8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+.add-btn{
+  font-size:9px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;
+  padding:4px 10px;border-radius:20px;border:1px solid transparent;
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;font-family:'DM Sans',sans-serif;
+}
+.add-btn:hover{opacity:0.85;transform:translateY(-1px);}
+.btn-scene   {background:var(--bs);color:var(--bt);border-color:rgba(26,90,130,0.2);}
+.btn-char    {background:var(--cs);color:var(--ct);border-color:rgba(74,45,138,0.2);}
+.btn-plot    {background:var(--ps);color:var(--pt);border-color:rgba(26,90,56,0.2);}
+.btn-theme   {background:var(--ts);color:var(--tt);border-color:rgba(122,74,10,0.2);}
+.btn-dialogue{background:var(--ds);color:var(--dt);border-color:rgba(138,42,42,0.2);}
+
+/* Fragment cards */
+.fcard{
+  position:absolute;width:148px;
+  background:var(--surface);border:1px solid var(--bd2);
+  border-radius:7px;padding:10px 12px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.06);
+  cursor:grab;user-select:none;
+  transition:box-shadow 0.15s,transform 0.15s;
+}
+.fcard:hover{box-shadow:0 4px 14px rgba(0,0,0,0.12);z-index:50;}
+.fcard.dragging{cursor:grabbing;box-shadow:0 8px 24px rgba(0,0,0,0.16);transform:scale(1.02);z-index:100;}
+
+.fcard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+.badge{font-size:9px;font-weight:500;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:0.04em;}
+.b-scene   {background:var(--bs);color:var(--bt);}
+.b-char    {background:var(--cs);color:var(--ct);}
+.b-plot    {background:var(--ps);color:var(--pt);}
+.b-theme   {background:var(--ts);color:var(--tt);}
+.b-dialogue{background:var(--ds);color:var(--dt);}
+
+.fcard-del{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:14px;line-height:1;padding:0;opacity:0;transition:opacity 0.12s;}
+.fcard:hover .fcard-del{opacity:1;}
+.fcard-del:hover{color:#c44;}
+
+.fcard-body{
+  font-family:'Lora',serif;font-size:11px;color:var(--tx2);
+  line-height:1.55;min-height:28px;outline:none;
+  cursor:text;
+}
+.fcard-body:empty::before{content:attr(data-ph);color:var(--tx3);font-style:italic;}
+
+/* SVG connector overlay */
+.conn-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;}
+
+/* Time pills */
+.time-bar{position:absolute;bottom:10px;left:12px;display:flex;gap:5px;z-index:10;}
+.time-pill{
+  font-size:9px;font-family:'DM Mono',monospace;letter-spacing:0.07em;text-transform:uppercase;
+  padding:3px 12px;border-radius:20px;border:1px solid var(--bd2);
+  color:var(--tx3);background:var(--s2);cursor:pointer;transition:all 0.15s;
+}
+.time-pill:hover{border-color:var(--accent);color:var(--accent);}
+.time-pill.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+
+/* ══════════════════════ STRUCTURE ══════════════════════ */
+.structure-body{flex:1;overflow-y:auto;padding:12px 11px;}
+.structure-body::-webkit-scrollbar{width:3px;}
+.structure-body::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px;}
+.s-label{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--tx3);font-family:'DM Mono',monospace;margin-bottom:7px;}
+.seq-slot{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:6px;margin-bottom:4px;border:1px dashed var(--bd2);font-size:11px;color:var(--tx3);cursor:pointer;transition:border-color 0.15s;}
+.seq-slot.filled{background:var(--s2);border-style:solid;border-color:var(--bd2);color:var(--tx2);}
+.seq-slot:hover{border-color:var(--accent);}
+.seq-num{font-size:9px;font-family:'DM Mono',monospace;color:var(--tx3);min-width:10px;}
+.sep{height:1px;background:var(--bd);margin:12px 0;}
+.conflict-block{background:rgba(138,42,42,0.05);border:1px solid rgba(138,42,42,0.2);border-radius:6px;padding:9px 10px;}
+.conflict-title{font-size:10px;font-weight:500;color:var(--dt);margin-bottom:4px;}
+.conflict-pair{font-family:'DM Mono',monospace;font-size:9px;color:var(--dt);opacity:0.8;margin-bottom:2px;}
+.conflict-text{font-size:10px;color:var(--tx3);line-height:1.5;}
+
+/* ══════════════════════ DRAFT ══════════════════════ */
+.draft-inner{flex:1;display:flex;overflow:hidden;min-height:0;}
+.prose-area{flex:1;padding:16px 14px;overflow-y:auto;min-width:0;}
+.prose-area::-webkit-scrollbar{width:3px;}
+.prose-area::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px;}
+.prose-chapter{font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.12em;color:var(--tx3);margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--bd);}
+.prose-para{margin-bottom:13px;}
+.pl{height:8px;border-radius:2px;background:var(--s3);margin-bottom:5px;}
+.pl.s{width:40%;}.pl.m{width:68%;}.pl.l{width:86%;}.pl.xl{width:100%;}
+.cursor{display:inline-block;width:1.5px;height:11px;background:var(--accent);vertical-align:middle;margin-left:1px;animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+.frag-sidebar{width:96px;border-left:1px solid var(--bd);padding:10px 8px;background:var(--s2);overflow-y:auto;flex-shrink:0;}
+.fs-label{font-size:9px;text-transform:uppercase;letter-spacing:0.1em;color:var(--tx3);font-family:'DM Mono',monospace;margin-bottom:7px;}
+.mini-card{background:var(--surface);border:1px solid var(--bd);border-radius:6px;padding:6px 7px;margin-bottom:5px;cursor:pointer;transition:border-color 0.12s;}
+.mini-card:hover{border-color:var(--bd2);}
+.mini-card.glow{border-color:rgba(122,90,46,0.4);background:var(--accent-bg);}
+.mini-text{font-family:'Lora',serif;font-size:9px;color:var(--tx3);line-height:1.4;}
+.mini-card.glow .mini-text{color:var(--tx2);}
+.mini-badge{font-size:8px;padding:1px 5px;border-radius:20px;display:inline-block;margin-bottom:3px;font-weight:500;}
+
+/* ── Legend ── */
+.legend{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px 18px;padding-top:14px;border-top:1px solid var(--bd);}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx3);}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">Writing Tool</div>
+  <div class="page-sub">UI design sketch · three-panel layout</div>
+</div>
+
+<div class="app">
+
+  <!-- ══ Panel 1: Fragment Canvas ══ -->
+  <div class="panel">
+    <div class="ph">
+      <div class="pn">Fragment canvas</div>
+      <div class="pd">drag · edit · connect</div>
+    </div>
+    <div class="canvas-wrap" id="canvas">
+
+      <!-- Add buttons toolbar -->
+      <div class="canvas-toolbar">
+        <button class="add-btn btn-scene"    onclick="addCard('scene','Scene sketch','Setting, atmosphere, action…')">+ Scene</button>
+        <button class="add-btn btn-char"     onclick="addCard('char','Character','Personality, motivation, backstory…')">+ Character</button>
+        <button class="add-btn btn-plot"     onclick="addCard('plot','Plot beat','Event, turning point, reveal…')">+ Plot</button>
+        <button class="add-btn btn-theme"    onclick="addCard('theme','Theme','Motif, symbol, recurring idea…')">+ Theme</button>
+        <button class="add-btn btn-dialogue" onclick="addCard('dialogue','Dialogue','Voice, subtext, snippet…')">+ Dialogue</button>
+      </div>
+
+      <!-- SVG for connector lines -->
+      <svg class="conn-svg" id="conn-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ag" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,1 L6,3.5 L0,6 Z" fill="rgba(26,90,56,0.5)"/></marker>
+          <marker id="ab" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,1 L6,3.5 L0,6 Z" fill="rgba(26,90,130,0.5)"/></marker>
+          <marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto"><path d="M0,1 L6,3.5 L0,6 Z" fill="rgba(138,42,42,0.55)"/></marker>
+        </defs>
+      </svg>
+
+      <!-- Time layer -->
+      <div class="time-bar">
+        <div class="time-pill">Early</div>
+        <div class="time-pill active">Middle</div>
+        <div class="time-pill">Late</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ Panel 2: Structure ══ -->
+  <div class="panel">
+    <div class="ph">
+      <div class="pn">Structure</div>
+      <div class="pd">synthesis</div>
+    </div>
+    <div class="structure-body">
+      <div class="s-label">Sequence</div>
+      <div class="seq-slot filled"><span class="seq-num">1</span>Mara finds letter</div>
+      <div class="seq-slot filled"><span class="seq-num">2</span>Rainy alley scene</div>
+      <div class="seq-slot"><span class="seq-num">3</span><span style="opacity:.3;font-size:10px;">drop here…</span></div>
+      <div class="seq-slot"><span class="seq-num">4</span><span style="opacity:.3;font-size:10px;">drop here…</span></div>
+      <div class="sep"></div>
+      <div class="conflict-block">
+        <div class="conflict-title">⚠ Conflict</div>
+        <div class="conflict-pair">scene ↔ character</div>
+        <div class="conflict-text">contradictory attributes detected</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Panel 3: Drafting ══ -->
+  <div class="panel">
+    <div class="ph">
+      <div class="pn">Drafting view</div>
+      <div class="pd">composition</div>
+    </div>
+    <div class="draft-inner">
+      <div class="prose-area">
+        <div class="prose-chapter">Chapter one</div>
+        <div class="prose-para">
+          <div class="pl xl"></div><div class="pl l"></div>
+          <div class="pl xl"></div><div class="pl m"></div>
+        </div>
+        <div class="prose-para">
+          <div class="pl xl"></div><div class="pl l"></div>
+          <div class="pl xl"></div><div class="pl xl"></div>
+          <div class="pl m"></div>
+        </div>
+        <div class="prose-para">
+          <div class="pl xl"></div><div class="pl l"></div>
+          <div class="pl" style="width:46%;display:inline-block;vertical-align:middle;"></div><span class="cursor"></span>
+        </div>
+      </div>
+      <div class="frag-sidebar">
+        <div class="fs-label">Related</div>
+        <div class="mini-card glow">
+          <span class="mini-badge b-scene">scene</span>
+          <div class="mini-text">Rain-soaked alley…</div>
+        </div>
+        <div class="mini-card">
+          <span class="mini-badge b-char">character</span>
+          <div class="mini-text">Mara — guilt-driven…</div>
+        </div>
+        <div class="mini-card">
+          <span class="mini-badge b-dialogue">dialogue</span>
+          <div class="mini-text">"You never asked…"</div>
+        </div>
+        <div class="mini-card">
+          <span class="mini-badge b-plot">plot</span>
+          <div class="mini-text">Letter never sent</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="leg"><div class="leg-dot" style="background:var(--bt)"></div>Scene</div>
+  <div class="leg"><div class="leg-dot" style="background:var(--ct)"></div>Character</div>
+  <div class="leg"><div class="leg-dot" style="background:var(--pt)"></div>Plot</div>
+  <div class="leg"><div class="leg-dot" style="background:var(--tt)"></div>Theme</div>
+  <div class="leg"><div class="leg-dot" style="background:var(--dt)"></div>Dialogue</div>
+  <div class="leg" style="margin-left:8px;">
+    <div style="width:22px;height:1.5px;background:rgba(26,90,56,0.45);border-radius:1px;"></div>develops
+  </div>
+  <div class="leg">
+    <div style="width:22px;height:1.5px;background:rgba(138,42,42,0.5);border-radius:1px;"></div>contradicts
+  </div>
+  <div class="leg">
+    <div style="width:18px;height:12px;border:1px dashed rgba(0,0,0,0.18);border-radius:4px;"></div>cluster
+  </div>
+</div>
+
+<script>
+var canvas = document.getElementById('canvas');
+var svg    = document.getElementById('conn-svg');
+var cards  = [];   // {el, x, y, type}
+var cardId = 0;
+
+var TYPES = {
+  scene:    {label:'Scene',    ph:'Setting, atmosphere, action…',     cls:'b-scene'},
+  char:     {label:'Character',ph:'Personality, motivation, backstory…',cls:'b-char'},
+  plot:     {label:'Plot beat',ph:'Event, turning point, reveal…',    cls:'b-plot'},
+  theme:    {label:'Theme',    ph:'Motif, symbol, recurring idea…',   cls:'b-theme'},
+  dialogue: {label:'Dialogue', ph:'Voice, subtext, snippet…',         cls:'b-dialogue'},
+};
+
+// Scatter positions so cards don't all overlap
+var POSITIONS = [
+  {x:22,  y:62 }, {x:186, y:62 }, {x:350, y:62 },
+  {x:22,  y:210}, {x:186, y:210}, {x:350, y:210},
+  {x:104, y:136}, {x:268, y:136},
+];
+var posIdx = 0;
+
+function addCard(type, titleOverride, phOverride) {
+  var t = TYPES[type];
+  var pos = POSITIONS[posIdx % POSITIONS.length];
+  posIdx++;
+
+  var id = 'fc-' + (cardId++);
+  var el = document.createElement('div');
+  el.className = 'fcard';
+  el.id = id;
+  el.style.left = pos.x + 'px';
+  el.style.top  = pos.y + 'px';
+
+  el.innerHTML =
+    '<div class="fcard-header">' +
+      '<span class="badge ' + t.cls + '">' + t.label + '</span>' +
+      '<button class="fcard-del" onclick="delCard(\'' + id + '\')" title="Remove">×</button>' +
+    '</div>' +
+    '<div class="fcard-body" contenteditable="true" spellcheck="false" data-ph="' + t.ph + '"></div>';
+
+  canvas.appendChild(el);
+  cards.push({el:el, x:pos.x, y:pos.y, type:type});
+
+  makeDraggable(el);
+  el.querySelector('.fcard-body').focus();
+  drawConnectors();
+}
+
+function delCard(id) {
+  var el = document.getElementById(id);
+  if (el) el.remove();
+  cards = cards.filter(function(c){ return c.el.id !== id; });
+  drawConnectors();
+}
+
+// ── Drag ──
+function makeDraggable(el) {
+  var startX, startY, origLeft, origTop;
+
+  el.addEventListener('mousedown', function(e) {
+    if (e.target.classList.contains('fcard-del')) return;
+    if (e.target.classList.contains('fcard-body')) return;
+    e.preventDefault();
+    el.classList.add('dragging');
+    startX = e.clientX; startY = e.clientY;
+    origLeft = parseInt(el.style.left) || 0;
+    origTop  = parseInt(el.style.top)  || 0;
+
+    function onMove(e) {
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+      var cr = canvas.getBoundingClientRect();
+      var nx = Math.max(0, Math.min(cr.width  - el.offsetWidth,  origLeft + dx));
+      var ny = Math.max(44,Math.min(cr.height - el.offsetHeight - 44, origTop + dy));
+      el.style.left = nx + 'px';
+      el.style.top  = ny + 'px';
+      drawConnectors();
+    }
+    function onUp() {
+      el.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup',   onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup',   onUp);
+  });
+}
+
+// ── Draw connector lines between nearby cards ──
+function cardCenter(el) {
+  return {
+    x: parseInt(el.style.left) + el.offsetWidth  / 2,
+    y: parseInt(el.style.top)  + el.offsetHeight / 2,
+  };
+}
+
+function drawConnectors() {
+  // Clear old lines
+  while (svg.children.length > 1) svg.removeChild(svg.lastChild); // keep <defs>
+
+  var allCards = Array.from(canvas.querySelectorAll('.fcard'));
+  var DIST = 220; // connect cards within this pixel distance
+
+  var drawn = {};
+  for (var i = 0; i < allCards.length; i++) {
+    for (var j = i + 1; j < allCards.length; j++) {
+      var a = cardCenter(allCards[i]);
+      var b = cardCenter(allCards[j]);
+      var dist = Math.sqrt(Math.pow(a.x-b.x,2) + Math.pow(a.y-b.y,2));
+      if (dist < DIST) {
+        var typeA = allCards[i].querySelector('.badge').className.replace('badge ','').replace('b-','');
+        var typeB = allCards[j].querySelector('.badge').className.replace('badge ','').replace('b-','');
+        var key = [allCards[i].id, allCards[j].id].sort().join('-');
+        if (drawn[key]) continue;
+        drawn[key] = true;
+
+        var color, marker;
+        if ((typeA==='scene' && typeB==='char') || (typeA==='char' && typeB==='scene')) {
+          color='rgba(138,42,42,0.45)'; marker='ar';
+        } else if (typeA==='plot' || typeB==='plot') {
+          color='rgba(26,90,56,0.4)'; marker='ag';
+        } else {
+          color='rgba(26,90,130,0.35)'; marker='ab';
+        }
+
+        var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+        line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+        line.setAttribute('stroke', color);
+        line.setAttribute('stroke-width','1.5');
+        line.setAttribute('stroke-dasharray','4 3');
+        line.setAttribute('marker-end','url(#'+marker+')');
+        svg.appendChild(line);
+      }
+    }
+  }
+}
+
+// ── Seed demo cards ──
+window.addEventListener('load', function() {
+  var demos = [
+    {type:'scene',    text:'Rain-soaked alley, neon reflections on wet pavement', x:18,  y:62 },
+    {type:'char',     text:'Mara — driven by guilt, avoids attachment',           x:182, y:62 },
+    {type:'dialogue', text:'"You never asked me to stay."',                       x:18,  y:240},
+    {type:'theme',    text:'Memory as burden vs. gift',                           x:182, y:240},
+    {type:'plot',     text:'Mara finds the letter she never sent',                x:100, y:152},
+  ];
+  demos.forEach(function(d) {
+    addCard(d.type);
+    var last = canvas.querySelectorAll('.fcard');
+    var el = last[last.length-1];
+    el.style.left = d.x + 'px';
+    el.style.top  = d.y + 'px';
+    el.querySelector('.fcard-body').innerText = d.text;
+  });
+  posIdx = demos.length;
+  drawConnectors();
+});
+
+// Time pill toggle
+document.querySelectorAll('.time-pill').forEach(function(p) {
+  p.addEventListener('click', function() {
+    document.querySelectorAll('.time-pill').forEach(function(x){ x.classList.remove('active'); });
+    p.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

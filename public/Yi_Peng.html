@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Make a wish</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font-family: "Noto Serif SC", "Songti SC", serif; color: #f6e7cf;
+    background:
+      radial-gradient(at 50% 0%, rgb(21,32,70) 0%, transparent 55%),
+      radial-gradient(at 50% 100%, rgb(52,24,8) 0%, transparent 60%),
+      linear-gradient(rgb(5,8,23) 0%, rgb(2,3,10) 60%, rgb(8,29,63) 100%);
+  }
+  canvas { position: fixed; inset: 0; z-index: 1; }
+  .grain {
+    position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: .14; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+  .wish {
+    position: fixed; z-index: 4; left: 50%; bottom: 16px; transform: translateX(-50%);
+    width: min(440px, calc(100% - 32px)); display: flex; align-items: center; gap: 6px;
+    background: rgba(12,14,30,.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,190,110,.18); border-radius: 999px; padding: 4px 4px 4px 16px;
+  }
+  .wish input {
+    flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+    color: #fff3df; font: inherit; font-size: 14px; padding: 6px 0;
+  }
+  .wish input::placeholder { color: rgba(246,231,207,.35); }
+  .wish button {
+    flex: none; height: 30px; border: none; background: none; cursor: pointer; padding: 0 10px 0 4px;
+    display: flex; align-items: center; gap: 7px;
+    font: inherit; font-size: 13px; letter-spacing: .06em; color: #ffd39a; white-space: nowrap;
+    transition: transform .3s ease, color .3s ease;
+  }
+  .wish button svg { filter: drop-shadow(0 0 5px rgba(255,170,80,.55)); transition: transform .3s ease, filter .3s ease; }
+  .wish button:hover, .wish button:focus-visible { color: #ffe6c2; outline: none; }
+  .wish button:hover svg, .wish button:focus-visible svg { transform: translateY(-3px); filter: drop-shadow(0 0 10px rgba(255,180,90,.95)); }
+  .wish button:active svg { transform: translateY(-6px); }
+  .wish button:hover, .wish button:focus-visible { transform: translateY(-3px); filter: drop-shadow(0 0 10px rgba(255,180,90,.95)); outline: none; }
+  .wish button:active { transform: translateY(-6px); }
+  .shake { animation: shake .4s; }
+  @keyframes shake { 20%,60% { transform: translateX(calc(-50% - 6px)); } 40%,80% { transform: translateX(calc(-50% + 6px)); } }
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<div class="grain"></div>
+
+<form class="wish" id="form">
+  <input id="text" maxlength="40" aria-label="Your wish" autocomplete="off">
+  <button type="submit"><span>Set your lantern</span><svg viewBox="0 0 20 26" width="17" height="22"><defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9662a"/><stop offset=".55" stop-color="#f6a24a"/><stop offset="1" stop-color="#ffe0a3"/></linearGradient></defs><path d="M3.2 6.2C3.2 1.4 16.8 1.4 16.8 6.2L15 20.6Q10 21.8 5 20.6Z" fill="url(#lg)"/><path d="M7.6 4.2 7.9 20.9M12.4 4.2 12.1 20.9" stroke="rgba(120,40,8,.25)" stroke-width=".6"/><ellipse cx="10" cy="23.2" rx="1.5" ry="1.9" fill="#fff4d6"/></svg></button>
+</form>
+
+<script>
+(() => {
+  const c = document.getElementById('sky'), ctx = c.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const form = document.getElementById('form'), ta = document.getElementById('text');
+    let W, H, ambient = [], embers = [], sparks = [], flying = [], last = performance.now();
+  let mx = -9999, my = -9999, mouseOn = false;
+  const BRUSH = '"Ma Shan Zheng", "Kaiti SC", "STKaiti", "KaiTi", serif';
+
+  function resize() {
+    W = c.width = innerWidth * dpr; H = c.height = innerHeight * dpr;
+    c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
+    const n = Math.max(22, Math.floor(innerWidth / 34));
+    while (ambient.length < n) ambient.push(mkAmbient(true));
+    ambient.length = n;
+  }
+  function mkAmbient(anywhere) {
+    return {
+      x: Math.random() * W, y: anywhere ? Math.random() * H : H + Math.random() * 80 * dpr,
+      vy: -(0.12 + Math.random() * 0.35) * dpr, vx: (Math.random() - .5) * .15 * dpr,
+      r: (2 + Math.random() * 6) * dpr, f: Math.random() * 6.28, hue: 26 + Math.random() * 20
+    };
+  }
+
+  // ---------- glowing dot (background lanterns & finished wishes) ----------
+  function dot(x, y, r, hue, glow) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r * 7);
+    g.addColorStop(0, `hsla(${hue},100%,78%,${.95 * glow})`);
+    g.addColorStop(.22, `hsla(${hue},100%,60%,${.4 * glow})`);
+    g.addColorStop(1, `hsla(${hue},100%,50%,0)`);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 7, 0, 6.283); ctx.fill();
+    ctx.fillStyle = `hsla(${hue},100%,88%,${Math.min(1, glow)})`;
+    ctx.beginPath(); ctx.arc(x, y, r * .65, 0, 6.283); ctx.fill();
+  }
+
+  // ---------- text wrapping for the lantern paper ----------
+  function tokens(s) { return s.match(/[A-Za-z0-9'’\-]+|\s+|./gu) || []; }
+  function layout(text, S) {
+    const maxW = S * 0.42, maxLines = 4;
+    let size = S * 0.115, lines;
+    const paras = text.split('\n');
+    for (; size >= S * 0.062; size -= S * 0.006) {
+      ctx.font = `${size}px ${BRUSH}`;
+      lines = [];
+      for (const p of paras) {
+        let line = '';
+        for (const t of tokens(p)) {
+          const test = line + t;
+          if (ctx.measureText(test).width > maxW && line.trim()) { lines.push(line.trim()); line = t.trimStart(); }
+          else line = test;
+        }
+        lines.push(line.trim());
+      }
+      lines = lines.filter((l, i) => l || i < lines.length - 1);
+      if (lines.length <= maxLines) return { lines, size };
+    }
+    lines = lines.slice(0, maxLines);
+    lines[maxLines - 1] = lines[maxLines - 1].slice(0, -1) + '…';
+    return { lines, size: S * 0.062 };
+  }
+
+  // ---------- smooth 1D noise (organic, non-repeating motion) ----------
+  const NT = Array.from({ length: 512 }, () => Math.random() * 2 - 1);
+  function noise(x) {
+    const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f);
+    const a = NT[((i % 512) + 512) % 512], b = NT[(((i + 1) % 512) + 512) % 512];
+    return a + (b - a) * u;
+  }
+  const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+  // ---------- the paper lantern (khom loi) ----------
+  function lantern(p, x, y, S, glow, flame, tilt, fade) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tilt);
+    const k = glow;
+
+    // soft light the lantern throws into the air around it
+    const hg = ctx.createRadialGradient(0, S * .2, 0, 0, S * .2, S * 1.6);
+    hg.addColorStop(0, `hsla(${p.hue},100%,60%,${.38 * k})`);
+    hg.addColorStop(.4, `hsla(${p.hue - 4},100%,48%,${.12 * k})`);
+    hg.addColorStop(1, `hsla(${p.hue - 6},100%,45%,0)`);
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(0, S * .2, S * 1.6, 0, 6.283); ctx.fill();
+
+    ctx.globalAlpha = fade;
+    const tw = S * .6, bw = S * .5, top = -S * .5, shoulder = -S * .34, bottom = S * .44;
+    const halfAt = yy => { const t = (yy - shoulder) / (bottom - shoulder); return (tw + (bw - tw) * t) / 2 + Math.sin(Math.PI * t) * S * .015; };
+    // body silhouette, with a slight belly in the paper
+    ctx.beginPath();
+    ctx.moveTo(-tw / 2, shoulder);
+    ctx.bezierCurveTo(-tw / 2, top - S * .03, tw / 2, top - S * .03, tw / 2, shoulder);
+    for (let i = 1; i <= 12; i++) { const yy = shoulder + (bottom - shoulder) * i / 12; ctx.lineTo(halfAt(yy), yy); }
+    ctx.quadraticCurveTo(0, bottom + S * .035, -bw / 2, bottom);
+    for (let i = 11; i >= 0; i--) { const yy = shoulder + (bottom - shoulder) * i / 12; ctx.lineTo(-halfAt(yy), yy); }
+    ctx.closePath();
+
+    // paper lit from inside: dim & red at the crown, hot near the flame
+    const bg = ctx.createLinearGradient(0, top, 0, bottom);
+    bg.addColorStop(0, `hsl(${p.hue - 16}, 75%, ${14 + k * 16}%)`);
+    bg.addColorStop(.35, `hsl(${p.hue - 8}, 88%, ${24 + k * 24}%)`);
+    bg.addColorStop(.8, `hsl(${p.hue}, 96%, ${36 + k * 28}%)`);
+    bg.addColorStop(1, `hsl(${p.hue + 6}, 100%, ${44 + k * 26}%)`);
+    ctx.fillStyle = bg; ctx.fill();
+
+    ctx.save(); ctx.clip();
+    // flickering hot spot above the flame
+    const hot = ctx.createRadialGradient(0, bottom, 0, 0, bottom, S * (.75 + .08 * flame));
+    hot.addColorStop(0, `rgba(255,236,190,${.5 * k * (.75 + .25 * flame)})`);
+    hot.addColorStop(1, 'rgba(255,190,110,0)');
+    ctx.fillStyle = hot; ctx.fillRect(-S, -S, S * 2, S * 2);
+    // cylinder shading: edges of the paper fall off, so it reads as round
+    const cyl = ctx.createLinearGradient(-tw / 2, 0, tw / 2, 0);
+    cyl.addColorStop(0, 'rgba(40,8,0,.55)'); cyl.addColorStop(.22, 'rgba(40,8,0,.12)');
+    cyl.addColorStop(.5, 'rgba(255,230,180,.06)');
+    cyl.addColorStop(.78, 'rgba(40,8,0,.12)'); cyl.addColorStop(1, 'rgba(40,8,0,.55)');
+    ctx.fillStyle = cyl; ctx.fillRect(-S, -S, S * 2, S * 2);
+    // paper seams that turn slowly as the lantern spins
+    ctx.lineWidth = Math.max(.6, S * .005);
+    for (let i = 0; i < 8; i++) {
+      const a = p.spin + i * Math.PI / 4, front = Math.cos(a);
+      if (front <= 0) continue;
+      const sx = Math.sin(a);
+      ctx.strokeStyle = `rgba(110,35,5,${.22 * front})`;
+      ctx.beginPath();
+      ctx.moveTo(sx * tw / 2 * .97, shoulder - S * .1 * front);
+      for (let j = 1; j <= 8; j++) { const yy = shoulder + (bottom - shoulder) * j / 8; ctx.lineTo(sx * halfAt(yy) * .97, yy); }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // wire hoop at the mouth, catching the flame light
+    ctx.strokeStyle = `rgba(255,200,130,${.35 * k})`; ctx.lineWidth = Math.max(.6, S * .007);
+    ctx.beginPath(); ctx.ellipse(0, bottom + S * .012, bw / 2, S * .028, 0, 0, Math.PI); ctx.stroke();
+
+    // the burning fuel cell
+    const fy = bottom + S * .035, fr = S * (.045 + .018 * flame);
+    const fg = ctx.createRadialGradient(0, fy, 0, 0, fy, fr * 2.4);
+    fg.addColorStop(0, `rgba(255,255,235,${k})`);
+    fg.addColorStop(.3, `rgba(255,205,105,${.9 * k})`);
+    fg.addColorStop(1, 'rgba(255,120,30,0)');
+    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(0, fy, fr * 2.4, 0, 6.283); ctx.fill();
+
+    // the wish, brushed on the paper
+    const L = p.L, ta = smooth(70 * dpr, 130 * dpr, S);
+    if (ta > 0) {
+      const fs = L.size * S / L.S;
+      ctx.font = `${fs}px ${BRUSH}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(85,24,4,${.78 * ta})`;
+      const lh = fs * 1.25, y0 = S * .02 - (L.lines.length - 1) * lh / 2;
+      L.lines.forEach((ln, i) => ctx.fillText(ln, 0, y0 + i * lh));
+    }
+    ctx.restore();
+  }
+
+  // ---------- release a wish ----------
+  function release(text) {
+    const rect = form.getBoundingClientRect();
+    const S = Math.min(180, innerHeight * .25, innerWidth * .42) * dpr;
+    const L = layout(text, S); L.S = S;
+    const y0 = rect.top * dpr - S * .75;
+    flying.push({
+      L, S0: S, t: 0, seed: Math.random() * 400,
+      sx: innerWidth / 2 * dpr, sy: y0, vy: 0, vx: 0,
+      rise: (12 + Math.random() * 8) * dpr,       // px/s on screen, same pace as the drifting lights
+      wind: (Math.random() - .5) * 8 * dpr,
+      spin: Math.random() * 6.28, spinV: (Math.random() < .5 ? -1 : 1) * (.1 + Math.random() * .1),
+      hue: 30 + Math.random() * 8
+    });
+  }
+
+  // ---------- main loop ----------
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    const f = dt * 60;
+    ctx.clearRect(0, 0, W, H);
+    const R = 220 * dpr, MX = mx * dpr, MY = my * dpr;
+
+    for (const a of ambient) {
+      let boost = 0;
+      if (mouseOn) {
+        const dx = MX - a.x, dy = MY - a.y, d2 = dx * dx + dy * dy;
+        if (d2 < R * R) { const d = Math.sqrt(d2) || 1, k = 1 - d / R; boost = k; a.vx += dx / d * .04 * dpr * k * f; a.vy += dy / d * .04 * dpr * k * f; }
+      }
+      a.vx *= Math.pow(.985, f); a.vy = a.vy * Math.pow(.99, f) - .003 * dpr * f;
+      if (a.vy > -.08 * dpr) a.vy -= .01 * dpr * f;
+      a.y += a.vy * f; a.x += a.vx * f + Math.sin(a.y / 140) * .22 * f; a.f += .04 * f;
+      if (a.y < -60) Object.assign(a, mkAmbient(false));
+      if (a.x < -80) a.x = W + 40; if (a.x > W + 80) a.x = -40;
+      dot(a.x, a.y, a.r, a.hue, (.7 + Math.sin(a.f) * .18) * (1 + boost * .9));
+    }
+
+    for (let i = embers.length - 1; i >= 0; i--) {
+      const e = embers[i];
+      e.y += e.vy * f; e.x += Math.sin(e.y / 120 + e.ph) * .2 * f; e.f += .04 * f; e.life -= f;
+      if (e.life <= 0 || e.y < -40) { embers.splice(i, 1); continue; }
+      dot(e.x, e.y, e.r, e.hue, (.75 + Math.sin(e.f) * .18) * Math.min(1, e.life / 240));
+    }
+
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const p = sparks[i];
+      p.vx *= Math.pow(.985, f); p.vy = p.vy * Math.pow(.99, f) - .003 * dpr * f;
+      p.x += p.vx * f; p.y += p.vy * f; p.f += .04 * f; p.life -= f;
+      if (p.life <= 0) { sparks.splice(i, 1); continue; }
+      dot(p.x, p.y, p.r, p.hue, (.7 + Math.sin(p.f) * .18) * Math.min(1, p.life / 60));
+    }
+
+    const LIGHT = 2.4;   // seconds held while the air inside heats up
+    for (let i = flying.length - 1; i >= 0; i--) {
+      const p = flying[i], n = p.seed;
+      p.t += dt;
+      const t = p.t;
+      const heat = smooth(0, LIGHT, t);
+      const go = smooth(LIGHT, LIGHT + 4, t);                 // eases off the hand
+      p.vy = -p.rise * go * (1 + .15 * noise(n + t * .3));
+      p.vx = (p.wind + noise(n + 50 + t * .2) * 6 * dpr) * go;
+      p.sy += p.vy * dt;
+      p.sx += p.vx * dt + noise(n + 90 + t * .4) * .25 * dpr * go;
+      p.spin += p.spinV * dt * go;
+      const s = Math.exp(-Math.max(0, t - LIGHT) / 10);      // slowly drifts into the distance
+      const hold = t < LIGHT ? (noise(n + 200 + t * 1.6) * 3 - heat * 6) * dpr : 0;
+      const sx = p.sx, sy = p.sy + hold * (1 - go);
+      const S = p.S0 * s;
+      const tilt = Math.max(-.15, Math.min(.15, p.vx / dpr * .012 + noise(n + 300 + t * .4) * .04 * heat));
+
+      const flame = .5 + .5 * (noise(n + 400 + t * 7) * .65 + noise(n + 500 + t * 19) * .35);
+      const glow = (.08 + .92 * heat) * (.86 + .14 * flame);
+      // far away it melts into a point of light, like every other lantern in the sky
+      const far = smooth(.34, .12, s);
+      if (s < .12 || sy < -60 * dpr) {
+        embers.push({ x: sx, y: sy + S * .3, r: Math.max(2.5 * dpr, S * .1), hue: p.hue, vy: p.vy / 60, ph: n, f: 0, life: 1100 });
+        flying.splice(i, 1); continue;
+      }
+      if (far < 1) lantern(p, sx, sy, S, glow, flame, tilt, smooth(0, .5, t) * (1 - far));
+      if (far > 0) dot(sx, sy + S * .3, Math.max(2.5 * dpr, S * .1), p.hue, (.7 + .25 * flame) * far);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- input ----------
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const text = ta.value.trim();
+    if (!text) { form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); ta.focus(); return; }
+    release(text);
+    ta.value = '';
+  });
+  addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; mouseOn = true; });
+  document.addEventListener('mouseleave', () => { mouseOn = false; });
+  function burst(cx, cy) {
+    for (let i = 0; i < 22; i++) {
+      const a = Math.random() * 6.283, sp = (1.4 + Math.random() * 3.2) * dpr;
+      sparks.push({ x: cx * dpr, y: cy * dpr, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - .9 * dpr,
+        r: (4 + Math.random() * 6) * dpr, f: Math.random() * 6.28, hue: 26 + Math.random() * 20, life: 110 + Math.random() * 80 });
+    }
+  }
+  addEventListener('mousedown', e => { if (!e.target.closest('.wish')) burst(e.clientX, e.clientY); });
+  let tx = 0, ty = 0, moved = false, lastBurst = 0;
+  addEventListener('touchstart', e => { const t = e.touches[0]; if (!t) return; tx = t.clientX; ty = t.clientY; moved = false; mx = tx; my = ty; mouseOn = true; }, { passive: true });
+  addEventListener('touchmove', e => { const t = e.touches[0]; if (!t) return; mx = t.clientX; my = t.clientY; if (Math.hypot(mx - tx, my - ty) > 10) moved = true; }, { passive: true });
+  addEventListener('touchend', e => {
+    mouseOn = false;
+    const t = e.changedTouches[0], now = Date.now();
+    if (!t || moved || now - lastBurst < 2500 || e.target.closest('.wish')) return;
+    burst(t.clientX, t.clientY); lastBurst = now;
+  }, { passive: true });
+  addEventListener('resize', resize);
+
+  resize();
+  (document.fonts ? document.fonts.load(`40px "Ma Shan Zheng"`, '心愿') : Promise.resolve()).catch(() => {}).finally(() => {});
+  requestAnimationFrame(t => { last = t; frame(t); });
+})();
+</script>
+</body>
+</html>

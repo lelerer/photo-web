@@ -1,0 +1,892 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bye-SG Counter · 2190-Day Journey</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --bg2: #eef1f7;
+      --card: #ffffff;
+      --text: #1a202c;
+      --muted: #718096;
+      --accent: #5a67d8;
+      --accent-2: #4299e1;
+      --ring: #7f8ff4;
+      --success: #276749;
+      --warn: #975a16;
+      --done: #553c9a;
+      --pr-accent: #c05621;
+      --pr-accent-2: #dd6b20;
+      --pr-ring: #ed8936;
+      --cz-accent: #c53030;
+      --cz-accent-2: #e53e3e;
+      --cz-ring: #fc8181;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: var(--text);
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 740px;
+      animation: fadeIn .5s ease-out;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .title {
+      font-weight: 700;
+      font-size: clamp(24px, 4vw, 32px);
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+    .title .flag { font-size: 24px; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #ffffff;
+      color: var(--muted);
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .pill svg { width: 16px; height: 16px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgb(0 0 0 / 6%), 0 4px 16px rgb(0 0 0 / 4%);
+    }
+
+    .card + .card {
+      margin-top: 16px;
+    }
+
+    .card-pr {
+      border-color: color-mix(in oklab, var(--pr-ring), transparent 65%);
+    }
+    .card-cz {
+      border-color: color-mix(in oklab, var(--cz-ring), transparent 65%);
+    }
+
+    .card-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .card-section-title .badge {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .card-section-title .badge-pr {
+      background: var(--pr-accent);
+    }
+    .card-section-title .badge-cz {
+      background: var(--cz-accent);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 10px;
+      align-items: center;
+      margin: 8px 0;
+    }
+    @media (max-width: 520px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    label, .muted { color: var(--muted); font-size: 14px; }
+
+    input[type="text"], input[type="date"] {
+      width: 100%;
+      background: #f8fafc;
+      color: var(--text);
+      border: 1px solid #cbd5e0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    input[readonly] { opacity: .9; }
+    input:focus {
+      border-color: var(--ring);
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring), transparent 75%);
+    }
+    input.pr-input {
+      border-color: color-mix(in oklab, var(--pr-ring), transparent 60%);
+    }
+    input.pr-input:focus {
+      border-color: var(--pr-ring);
+      box-shadow: 0 0 0 4px color-mix(in oklab, var(--pr-ring), transparent 75%);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: 1fr; }
+    }
+
+    .stats-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 600px) {
+      .stats-3 { grid-template-columns: 1fr; }
+    }
+
+    .box {
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .box-pr {
+      border-color: color-mix(in oklab, var(--pr-ring), transparent 65%);
+    }
+    .box-cz {
+      border-color: color-mix(in oklab, var(--cz-ring), transparent 65%);
+    }
+
+    .label { color: var(--muted); font-size: 13px; }
+    .big {
+      font-feature-settings: "tnum" 1, "ss01" 1;
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(28px, 6vw, 40px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-top: 6px;
+    }
+    .big-pr { color: var(--pr-accent); }
+    .big-cz { color: var(--cz-accent); }
+    .sub { margin-top: 4px; font-size: 14px; color: var(--muted); }
+
+    .status {
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    .status.ok { color: var(--success); }
+    .status.warn { color: var(--warn); }
+    .status.done { color: var(--done); }
+    .status.pr-waiting { color: var(--pr-accent); }
+    .status.cz-waiting { color: var(--cz-accent); }
+
+    .progress {
+      position: relative;
+      height: 10px;
+      background: #e2e8f0;
+      border: none;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 14px 0 4px;
+    }
+    .bar {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      box-shadow: inset 0 0 18px rgb(255 255 255 / 10%);
+      transition: width .5s cubic-bezier(.2,.8,.2,1);
+    }
+    .bar-pr {
+      background: linear-gradient(90deg, var(--pr-accent), var(--pr-accent-2));
+    }
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    footer { margin-top: 14px; font-size: 12px; color: var(--muted); text-align: right; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .life-bar {
+      display: flex;
+      height: 28px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 8px 0 6px;
+    }
+    .life-seg {
+      height: 100%;
+      transition: filter .15s ease;
+    }
+    .life-seg:hover { filter: brightness(1.15); }
+    .life-wrap { position: relative; }
+    .life-events { position: absolute; inset: 0; pointer-events: none; }
+    .life-evt {
+      position: absolute;
+      top: 8px;
+      width: 8px; /* hover target */
+      height: 28px;
+      transform: translateX(-50%);
+      pointer-events: auto;
+      cursor: default;
+    }
+    .life-evt::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1.5px;
+      transform: translateX(-50%);
+      background: rgb(255 255 255 / 85%);
+    }
+    .life-evt:hover::after { width: 2.5px; background: #fff; }
+    .life-tip {
+      position: absolute;
+      bottom: calc(100% + 2px);
+      transform: translateX(-50%);
+      background: var(--text);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.4;
+      padding: 6px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .1s ease;
+      z-index: 5;
+    }
+    .life-tip.show { opacity: 1; }
+    .life-tip strong { font-size: 13px; }
+    .life-axis {
+      position: relative;
+      height: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .life-axis span {
+      position: absolute;
+      transform: translateX(-50%);
+    }
+    .life-axis span:first-child { transform: none; }
+    .life-axis span:last-child { transform: translateX(-100%); }
+    .life-legend {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .life-row {
+      display: grid;
+      grid-template-columns: 12px auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      font-size: 14px;
+    }
+    .life-swatch { width: 12px; height: 12px; border-radius: 3px; }
+    .life-years { color: var(--muted); font-size: 13px; text-align: right; }
+    .life-dur {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      min-width: 9ch;
+      text-align: right;
+    }
+    #lifeMap {
+      height: 320px;
+      margin-top: 16px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      z-index: 0;
+    }
+    .map-label {
+      background: #fff;
+      border: none;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgb(0 0 0 / 15%);
+      font: 600 12px Inter, system-ui, sans-serif;
+      padding: 3px 8px;
+    }
+    .map-label::before { display: none; }
+    .map-events {
+      margin-top: 4px;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="shell">
+    <header>
+      <div class="title">
+        <span class="flag" role="img" aria-label="Singapore flag">🇸🇬</span>
+        Bye-SG
+      </div>
+      <div class="pill" id="pillDates" title="Start and end date">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 3v3M17 3v3M3 9h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+        <span><strong id="pillStart">21/07/2025</strong> → <span id="pillEnd">—</span></span>
+      </div>
+    </header>
+
+    <!-- 2190-Day Journey Card -->
+    <section class="card" aria-live="polite">
+      <div class="card-section-title">
+        <span class="badge"></span>
+        Bond Counter
+      </div>
+
+      <div class="row">
+        <label class="muted">Start date</label>
+        <input type="text" id="startText" value="21/07/2025" readonly>
+      </div>
+
+      <div class="row">
+        <label for="today" class="muted">Today's date</label>
+        <input id="today" type="date" aria-describedby="todayHelp">
+      </div>
+
+      <div id="status" class="status" style="margin:.25rem 0 .5rem;"></div>
+
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="2190" aria-valuenow="0">
+        <div class="bar" id="bar"></div>
+      </div>
+      <div class="bar-label">
+        <div><span id="pctLabel">0%</span> complete</div>
+        <div><span id="passedLabel">0</span>/<span id="totalLabel">2190</span> days</div>
+      </div>
+
+      <div class="stats">
+        <div class="box">
+          <div class="label">Days passed since 21/07/2025</div>
+          <div id="passed" class="big">—</div>
+        </div>
+        <div class="box">
+          <div class="label">Days left (out of 2190)</div>
+          <div id="left" class="big">—</div>
+          <div class="sub">≈ <span id="yearsLeft">—</span> years (at 365 days/year)</div>
+        </div>
+      </div>
+
+      <div class="box" style="margin-top:16px">
+        <div class="label">Days living in Singapore since 20/07/2019</div>
+        <div id="sgDays" class="big">—</div>
+        <div class="sub"><span id="sgYMD">—</span></div>
+      </div>
+    </section>
+
+    <!-- Citizenship Application Card -->
+    <section class="card card-cz" aria-live="polite">
+      <div class="card-section-title">
+        <span class="badge badge-cz"></span>
+        Citizenship Application Counter
+      </div>
+
+      <div class="row">
+        <label class="muted">Citizenship application date</label>
+        <input type="text" id="czDateText" value="14/10/2026" readonly>
+      </div>
+
+      <div id="czStatus" class="status" style="margin:.25rem 0 .5rem;"></div>
+
+      <div id="czDetails" style="display:none">
+        <div class="stats-3">
+          <div class="box box-cz">
+            <div class="label">Days waiting</div>
+            <div id="czDays" class="big big-cz">—</div>
+          </div>
+          <div class="box box-cz">
+            <div class="label">Months waiting</div>
+            <div id="czMonths" class="big big-cz">—</div>
+            <div class="sub"><span id="czRemainDays">—</span> days</div>
+          </div>
+          <div class="box box-cz">
+            <div class="label">Weeks waiting</div>
+            <div id="czWeeks" class="big big-cz">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PR Card -->
+    <section class="card card-pr" aria-live="polite">
+      <div class="card-section-title">
+        <span class="badge badge-pr"></span>
+        Singapore PR
+      </div>
+
+      <div class="row">
+        <label class="muted">PR effective date</label>
+        <input type="text" id="prDateText" value="02/07/2026" readonly>
+      </div>
+
+      <div id="prStatus" class="status" style="margin:.25rem 0 .5rem;"></div>
+
+      <div id="prDetails" style="display:none">
+        <div class="stats-3">
+          <div class="box box-pr">
+            <div class="label">Days as PR</div>
+            <div id="prDays" class="big big-pr">—</div>
+          </div>
+          <div class="box box-pr">
+            <div class="label">Months as PR</div>
+            <div id="prMonths" class="big big-pr">—</div>
+            <div class="sub"><span id="prRemainDays">—</span> days</div>
+          </div>
+          <div class="box box-pr">
+            <div class="label">Weeks as PR</div>
+            <div id="prWeeks" class="big big-pr">—</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Life Map Card -->
+    <section class="card">
+      <div class="card-section-title">
+        <span class="badge" style="background:var(--text)"></span>
+        Life Map
+        <span style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400;font-size:13px">🎂 Born 3 Sep 2002 · <span id="age">—</span> years old</span>
+      </div>
+
+      <div class="life-wrap">
+        <div class="life-tip" id="lifeTip"></div>
+        <div class="life-bar" id="lifeBar"></div>
+        <div class="life-events" id="lifeEvents"></div>
+      </div>
+      <div class="life-axis" id="lifeAxis"></div>
+      <div class="life-legend" id="lifeLegend"></div>
+      <div id="lifeMap" role="img" aria-label="Map of Beijing, Xi'an and Singapore"></div>
+    </section>
+
+    <footer>
+      journey tracker · Bye-SG
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      const TOTAL = 2190;
+
+      const START_DMY = "21/07/2025";
+      const startDate = dmyToLocalDate(START_DMY);
+      const SG_START = dmyToLocalDate("20/07/2019");
+
+      const todayInput = document.getElementById("today");
+      todayInput.value = toInputDate(new Date());
+
+      const end = addDays(startDate, TOTAL);
+      const endLong = longDate(end);
+      document.getElementById("pillEnd").textContent = endLong;
+      document.getElementById("pillStart").textContent = START_DMY;
+      document.getElementById("totalLabel").textContent = String(TOTAL);
+
+      // ── Helper functions ──────────────────────────────────────────────
+
+      function toInputDate(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      }
+
+      function fromInputDate(v) {
+        const [y, m, d] = v.split("-").map(Number);
+        const dt = new Date(y, m - 1, d);
+        dt.setHours(0, 0, 0, 0);
+        return dt;
+      }
+
+      function dmyToLocalDate(dmy) {
+        const [d, m, y] = dmy.split("/").map(Number);
+        const dt = new Date(y, m - 1, d);
+        dt.setHours(0, 0, 0, 0);
+        return dt;
+      }
+
+      function longDate(d) {
+        return d.toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "long", day: "numeric" });
+      }
+
+      function shortDate(d) {
+        return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+      }
+
+      function daysBetween(a, b) {
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+        const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+        return Math.floor((utcB - utcA) / msPerDay);
+      }
+
+      function addDays(d, n) {
+        const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        dt.setUTCDate(dt.getUTCDate() + n);
+        return new Date(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+      }
+
+      function clamp(n, min, max) { return Math.max(min, Math.min(n, max)); }
+
+      // ── 2190-day counter ──────────────────────────────────────────────
+
+      function update() {
+        if (!todayInput.value) return;
+        const today = fromInputDate(todayInput.value);
+        const diff = daysBetween(startDate, today);
+
+        const statusEl = document.getElementById("status");
+        const passedEl = document.getElementById("passed");
+        const leftEl = document.getElementById("left");
+        const yearsLeftEl = document.getElementById("yearsLeft");
+        const bar = document.getElementById("bar");
+        const pctLabel = document.getElementById("pctLabel");
+        const passedLabel = document.getElementById("passedLabel");
+        const progress = document.querySelector(".progress");
+
+        let passed, left, statusTxt, statusClass;
+
+        if (diff < 0) {
+          const startsIn = -diff;
+          passed = 0;
+          left = TOTAL;
+          statusTxt = `Starts in ${startsIn} day${startsIn === 1 ? "" : "s"} (today is before start).`;
+          statusClass = "warn";
+        } else if (diff >= TOTAL) {
+          passed = TOTAL;
+          left = 0;
+          statusTxt = `Completed on ${longDate(addDays(startDate, TOTAL))}.`;
+          statusClass = "done";
+        } else {
+          passed = diff;
+          left = TOTAL - passed;
+          statusTxt = `In progress since ${longDate(startDate)}.`;
+          statusClass = "ok";
+        }
+
+        passedEl.textContent = String(passed);
+        leftEl.textContent = String(left);
+        yearsLeftEl.textContent = (Math.round((left / 365) * 100) / 100).toFixed(2);
+
+        const pct = Math.round((clamp(passed, 0, TOTAL) / TOTAL) * 100);
+        bar.style.width = pct + "%";
+        pctLabel.textContent = pct + "%";
+        passedLabel.textContent = String(passed);
+        progress.setAttribute("aria-valuenow", String(passed));
+
+        statusEl.className = "status " + statusClass;
+        statusEl.textContent = statusTxt;
+
+        // Time living in Singapore
+        const sgDiff = Math.max(0, daysBetween(SG_START, today));
+        document.getElementById("sgDays").textContent = String(sgDiff);
+        let y = today.getFullYear() - SG_START.getFullYear();
+        let m = today.getMonth() - SG_START.getMonth();
+        if (today.getDate() < SG_START.getDate()) m--;
+        if (m < 0) { y--; m += 12; }
+        const anchor = new Date(SG_START.getFullYear() + y, SG_START.getMonth() + m, SG_START.getDate());
+        const d = Math.max(0, daysBetween(anchor, today));
+        document.getElementById("sgYMD").textContent = sgDiff > 0 ? `${y} years, ${m} months, ${d} days` : "—";
+
+        // Also re-run PR update since today may have changed
+        updatePR();
+      }
+
+      // ── PR & citizenship counters ─────────────────────────────────────
+
+      const PR_START_DMY = "02/07/2026";
+      const CZ_START_DMY = "14/10/2026";
+      const prStartDate = dmyToLocalDate(PR_START_DMY);
+      const czStartDate = dmyToLocalDate(CZ_START_DMY);
+
+      function renderCounter(prefix, start, statusText, statusClass) {
+        const today = todayInput.value ? fromInputDate(todayInput.value) : new Date();
+        const diff = daysBetween(start, today);
+
+        const statusEl = document.getElementById(prefix + "Status");
+        const detailsEl = document.getElementById(prefix + "Details");
+
+        if (diff < 0) {
+          statusEl.className = "status warn";
+          statusEl.textContent = `Starts in ${-diff} day${diff === -1 ? "" : "s"}.`;
+          detailsEl.style.display = "none";
+          return;
+        }
+
+        detailsEl.style.display = "block";
+        statusEl.className = "status " + statusClass;
+        statusEl.textContent = statusText;
+
+        // Days / weeks
+        document.getElementById(prefix + "Days").textContent = String(diff);
+        document.getElementById(prefix + "Weeks").textContent = String(Math.floor(diff / 7));
+
+        // Exact calendar months + remaining days
+        const todayY = today.getFullYear(), todayM = today.getMonth(), todayD = today.getDate();
+        const sY = start.getFullYear(), sM = start.getMonth(), sD = start.getDate();
+        let exactMonths = (todayY - sY) * 12 + (todayM - sM);
+        if (todayD < sD) exactMonths--;
+        const monthsAnchor = new Date(sY, sM + exactMonths, sD);
+        const remainDays = daysBetween(monthsAnchor, today);
+        document.getElementById(prefix + "Months").textContent = String(exactMonths);
+        document.getElementById(prefix + "RemainDays").textContent = String(remainDays);
+      }
+
+      function updatePR() {
+        renderCounter("pr", prStartDate,
+          `PR since ${longDate(prStartDate)}.`, "pr-waiting");
+        renderCounter("cz", czStartDate,
+          `Submitted on ${longDate(czStartDate)}.`, "cz-waiting");
+      }
+
+      // ── Life map ──────────────────────────────────────────────────────
+
+      const PLACES = {
+        "Baby Nomad": { color: "#a0aec0" },
+        "Beijing":   { color: "#a61b29", country: "China", latlng: [39.9042, 116.4074] },
+        "Xi'an":     { color: "#b7862b", country: "China", latlng: [34.3416, 108.9398] },
+        "Singapore": { color: "#d53f8c", latlng: [1.3521, 103.8198] },
+        "Koh Tao":   { color: "#0284c7", country: "Thailand", latlng: [10.0956, 99.8404] },
+        "Munich":    { color: "#2f855a", country: "Germany", latlng: [48.1351, 11.5820] },
+        "Traveller": { color: "#805ad5" },
+      };
+
+      // tick: show the start year on the timeline axis
+      const LIFE = [
+        { place: "Baby Nomad", from: "03/09/2002", to: "01/10/2004", tick: true },
+        { place: "Beijing",   from: "01/10/2004", to: "01/07/2010", tick: true },
+        { place: "Xi'an",     from: "01/07/2010", to: "20/07/2019", tick: true },
+        { place: "Singapore", from: "20/07/2019", to: "01/10/2022", tick: true },
+        { place: "Koh Tao",   from: "01/10/2022", to: "01/02/2023" },
+        { place: "Singapore", from: "01/02/2023", to: "01/04/2023" },
+        { place: "Munich",    from: "01/04/2023", to: "01/09/2023" },
+        { place: "Traveller", from: "01/09/2023", to: "01/02/2024" },
+        { place: "Munich",    from: "01/02/2024", to: "01/06/2024" },
+        { place: "Koh Tao",   from: "01/06/2024", to: "01/08/2024" },
+        { place: "Singapore", from: "01/08/2024", to: null },
+      ];
+
+      const LIFE_EVENTS = [
+        { date: "01/09/2008", label: "开始上小学" },
+        { date: "01/07/2014", label: "小升初" },
+        { date: "01/07/2017", label: "中考" },
+        { date: "01/12/2022", label: "Became a Divemaster" },
+        { date: "01/04/2023", label: "First time in Europe" },
+        { date: "01/06/2025", label: "Finished bachelor's" },
+        { date: "02/07/2026", label: "PR approved" },
+      ];
+
+      const BIRTHDAY = dmyToLocalDate("03/09/2002");
+
+      function ageAt(d) {
+        let age = d.getFullYear() - BIRTHDAY.getFullYear();
+        if (d.getMonth() < BIRTHDAY.getMonth() ||
+            (d.getMonth() === BIRTHDAY.getMonth() && d.getDate() < BIRTHDAY.getDate())) age--;
+        return Math.max(0, age);
+      }
+
+      function monthYear(d) {
+        return d.toLocaleDateString("en", { month: "short", year: "numeric" });
+      }
+
+      function fmtDuration(days) {
+        return days >= 365 ? (days / 365.25).toFixed(1) + " yrs" : Math.round(days / 30.44) + " mo";
+      }
+
+      function lifeSpans(today) {
+        return LIFE.map(p => {
+          const from = dmyToLocalDate(p.from);
+          const to = p.to ? dmyToLocalDate(p.to) : today;
+          return { ...p, ...PLACES[p.place], fromD: from, toD: to, days: Math.max(0, daysBetween(from, to)) };
+        });
+      }
+
+      function renderLife() {
+        const today = todayInput.value ? fromInputDate(todayInput.value) : new Date();
+        const spans = lifeSpans(today);
+        document.getElementById("age").textContent = String(ageAt(today));
+        const lifeStart = spans[0].fromD;
+        const total = Math.max(1, daysBetween(lifeStart, today));
+
+        const bar = document.getElementById("lifeBar");
+        const axis = document.getElementById("lifeAxis");
+        const legend = document.getElementById("lifeLegend");
+        const eventsEl = document.getElementById("lifeEvents");
+        const tip = document.getElementById("lifeTip");
+        bar.innerHTML = axis.innerHTML = legend.innerHTML = eventsEl.innerHTML = "";
+
+        function showTip(html, center) {
+          tip.innerHTML = html;
+          // Center over the target, but keep inside the bar
+          const barW = bar.offsetWidth, tipW = tip.offsetWidth;
+          tip.style.left = clamp(center, tipW / 2, barW - tipW / 2) + "px";
+          tip.classList.add("show");
+        }
+        const hideTip = () => tip.classList.remove("show");
+
+        spans.forEach(p => {
+          const seg = document.createElement("div");
+          seg.className = "life-seg";
+          seg.style.width = (p.days / total * 100) + "%";
+          seg.style.background = p.color;
+          const where = p.country ? `${p.place}, ${p.country}` : p.place;
+          seg.setAttribute("aria-label", where);
+          const a1 = ageAt(p.fromD), a2 = ageAt(p.to ? addDays(p.toD, -1) : today);
+          const ageLabel = a1 === a2 ? `Age ${a1}` : `Age ${a1}–${a2}`;
+          seg.addEventListener("mouseenter", () => showTip(
+            `<strong>${where}</strong><br>${monthYear(p.fromD)} – ${p.to ? monthYear(addDays(p.toD, -1)) : "now"} · ${fmtDuration(p.days)}<br>${ageLabel}`,
+            seg.offsetLeft + seg.offsetWidth / 2));
+          seg.addEventListener("mouseleave", hideTip);
+          bar.appendChild(seg);
+        });
+
+        // Important events as thin lines on the bar
+        LIFE_EVENTS.forEach(e => {
+          const d = dmyToLocalDate(e.date);
+          const offset = daysBetween(lifeStart, d);
+          if (offset < 0 || offset > total) return;
+          const pct = offset / total * 100;
+          const pin = document.createElement("div");
+          pin.className = "life-evt";
+          pin.style.left = pct + "%";
+          pin.setAttribute("aria-label", e.label);
+          pin.addEventListener("mouseenter", () => showTip(
+            `<strong>${e.label}</strong><br>${monthYear(d)} · Age ${ageAt(d)}`,
+            bar.offsetWidth * pct / 100));
+          pin.addEventListener("mouseleave", hideTip);
+          eventsEl.appendChild(pin);
+        });
+
+        // Legend: one row per place, total time + periods
+        const byPlace = new Map();
+        spans.forEach(p => {
+          if (!byPlace.has(p.place)) byPlace.set(p.place, { color: p.color, days: 0, periods: [] });
+          const g = byPlace.get(p.place);
+          g.days += p.days;
+          const last = g.periods[g.periods.length - 1];
+          // Merge back-to-back periods in the same place
+          if (last && last.toD.getTime() === p.fromD.getTime()) { last.toD = p.toD; last.open = !p.to; }
+          else g.periods.push({ fromD: p.fromD, toD: p.toD, open: !p.to });
+        });
+        byPlace.forEach((g, place) => {
+          const periods = g.periods.map(r => {
+            const short = daysBetween(r.fromD, r.toD) < 365 && !r.open;
+            const f = short ? monthYear(r.fromD) : r.fromD.getFullYear();
+            const t = r.open ? "now" : (short ? monthYear(addDays(r.toD, -1)) : r.toD.getFullYear());
+            return `${f} – ${t}`;
+          }).join(", ");
+          const row = document.createElement("div");
+          row.className = "life-row";
+          row.innerHTML = `<span class="life-swatch" style="background:${g.color}"></span>
+            <span>${place}</span>
+            <span class="life-years">${periods}</span>
+            <span class="life-dur">${fmtDuration(g.days)}</span>`;
+          legend.appendChild(row);
+        });
+
+        // Axis ticks at major moves + today
+        const ticks = spans.filter(p => p.tick).map(p => p.fromD).concat([today]);
+        ticks.forEach((d, i) => {
+          const t = document.createElement("span");
+          t.style.left = (daysBetween(lifeStart, d) / total * 100) + "%";
+          t.textContent = i === ticks.length - 1 ? "now" : String(d.getFullYear());
+          axis.appendChild(t);
+        });
+      }
+
+      function initLifeMap() {
+        if (typeof L === "undefined") {
+          document.getElementById("lifeMap").style.display = "none";
+          return;
+        }
+        const map = L.map("lifeMap", { scrollWheelZoom: false, attributionControl: true });
+        L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
+          attribution: "Tiles &copy; Esri",
+          maxZoom: 10,
+        }).addTo(map);
+
+        const located = Object.entries(PLACES).filter(([, v]) => v.latlng);
+        // Events grouped by the place I lived in at the time
+        const eventsByPlace = {};
+        LIFE_EVENTS.forEach(e => {
+          const d = dmyToLocalDate(e.date);
+          const span = LIFE.find(p => d >= dmyToLocalDate(p.from) && (!p.to || d < dmyToLocalDate(p.to)));
+          if (span) (eventsByPlace[span.place] ??= []).push(`${monthYear(d)} · ${e.label}`);
+        });
+
+        located.forEach(([place, v]) => {
+          const marker = L.circleMarker(v.latlng, { radius: 8, color: "#fff", weight: 2, fillColor: v.color, fillOpacity: 1 })
+            .addTo(map)
+            .bindTooltip(place, { permanent: true, direction: "right", offset: [10, 0], className: "map-label" });
+          const events = eventsByPlace[place];
+          if (!events) return;
+          const detail = `${place}<div class="map-events">${events.join("<br>")}</div>`;
+          marker.on("mouseover", () => { marker.setTooltipContent(detail); marker.bringToFront(); });
+          marker.on("mouseout", () => marker.setTooltipContent(place));
+        });
+        map.fitBounds(located.map(([, v]) => v.latlng), { padding: [30, 30] });
+      }
+
+      initLifeMap();
+      todayInput.addEventListener("change", renderLife);
+      renderLife();
+
+      todayInput.addEventListener("change", update);
+      update();
+    })();
+  </script>
+</body>
+</html>
