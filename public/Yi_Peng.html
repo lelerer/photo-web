@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,7 +17,39 @@
       radial-gradient(at 50% 100%, rgb(52,24,8) 0%, transparent 60%),
       linear-gradient(rgb(5,8,23) 0%, rgb(2,3,10) 60%, rgb(8,29,63) 100%);
   }
+  body.theme-forest {
+    color: #eef2d2;
+    background:
+      radial-gradient(at 50% 0%, rgb(20, 44, 18) 0%, transparent 55%),
+      radial-gradient(at 50% 100%, rgb(36, 46, 8) 0%, transparent 60%),
+      linear-gradient(rgb(7, 16, 7) 0%, rgb(3, 10, 5) 60%, rgb(12, 32, 14) 100%);
+  }
+  body.theme-dive {
+    color: #d8eefa;
+    background:
+      radial-gradient(at 50% -12%, rgba(145, 215, 245, .9) 0%, rgba(145, 215, 245, 0) 46%),
+      linear-gradient(115deg, transparent 42%, rgba(170, 225, 250, .08) 50%, transparent 58%),
+      linear-gradient(63deg, transparent 40%, rgba(170, 225, 250, .06) 48%, transparent 56%),
+      linear-gradient(rgb(14, 66, 104) 0%, rgb(7, 36, 66) 55%, rgb(2, 14, 30) 100%);
+  }
   canvas { position: fixed; inset: 0; z-index: 1; }
+  .modes {
+    position: fixed; z-index: 4; top: 14px; right: 14px; display: flex; gap: 6px;
+  }
+  .modes button {
+    border: 1px solid rgba(255, 255, 255, .2); background: rgba(12, 14, 30, .4);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    color: inherit; font: inherit; font-size: 12px; letter-spacing: .1em;
+    padding: 5px 12px; border-radius: 999px; cursor: pointer; opacity: .6;
+    transition: opacity .3s, border-color .3s, background .3s;
+  }
+  .modes button:hover, .modes button:focus-visible { opacity: .9; outline: none; }
+  .modes button.on { opacity: 1; border-color: rgba(255, 200, 120, .55); }
+  body.theme-dive .modes button.on { border-color: rgba(130, 210, 250, .6); }
+  body.theme-dive .wish { border-color: rgba(140, 210, 250, .25); }
+  body.theme-dive .wish button { color: #a8dcf5; }
+  body.theme-dive .wish button:hover, body.theme-dive .wish button:focus-visible { color: #d2eefc; }
+  body.theme-forest .wish button svg, body.theme-dive .wish button svg { display: none; }
   .grain {
     position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: .14; mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='7'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
@@ -53,6 +85,12 @@
 <canvas id="sky"></canvas>
 <div class="grain"></div>
 
+<div class="modes" id="modes" role="group" aria-label="Scene">
+  <button type="button" data-theme="night" class="on">Night</button>
+  <button type="button" data-theme="forest">Rainforest</button>
+  <button type="button" data-theme="dive">Dive</button>
+</div>
+
 <form class="wish" id="form">
   <input id="text" maxlength="40" aria-label="Your wish" autocomplete="off">
   <button type="submit"><span>Set your lantern</span><svg viewBox="0 0 20 26" width="17" height="22"><defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9662a"/><stop offset=".55" stop-color="#f6a24a"/><stop offset="1" stop-color="#ffe0a3"/></linearGradient></defs><path d="M3.2 6.2C3.2 1.4 16.8 1.4 16.8 6.2L15 20.6Q10 21.8 5 20.6Z" fill="url(#lg)"/><path d="M7.6 4.2 7.9 20.9M12.4 4.2 12.1 20.9" stroke="rgba(120,40,8,.25)" stroke-width=".6"/><ellipse cx="10" cy="23.2" rx="1.5" ry="1.9" fill="#fff4d6"/></svg></button>
@@ -67,18 +105,41 @@
   let mx = -9999, my = -9999, mouseOn = false;
   const BRUSH = '"Ma Shan Zheng", "Kaiti SC", "STKaiti", "KaiTi", serif';
 
+  // ---------- scene themes ----------
+  const THEMES = {
+    night:  { ambHue: () => 26 + Math.random() * 20, lantHue: () => 30 + Math.random() * 8,  sky: 'night', btn: 'Set your lantern' },
+    forest: { ambHue: () => 58 + Math.random() * 28, lantHue: () => 46 + Math.random() * 10, sky: 'night', btn: 'Release a firefly' },
+    dive:   { ambHue: () => 195 + Math.random() * 15, lantHue: () => 195 + Math.random() * 15, sky: 'water', btn: 'Blow a bubble' }
+  };
+  let theme = 'night';
+  let swarm = [], released = 0, swarmDone = false;
+  let wisps = [], ambN = 0;
+
   function resize() {
     W = c.width = innerWidth * dpr; H = c.height = innerHeight * dpr;
     c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
-    const n = Math.max(22, Math.floor(innerWidth / 34));
+    const n = theme === 'dive' ? Math.max(26, Math.floor(innerWidth / 16))
+      : theme === 'forest' ? Math.max(26, Math.floor(innerWidth / 28))
+      : Math.max(22, Math.floor(innerWidth / 34));
     while (ambient.length < n) ambient.push(mkAmbient(true));
-    ambient.length = n;
+    ambient.length = n; ambN = n;
   }
   function mkAmbient(anywhere) {
+    const T = THEMES[theme];
+    if (theme === 'dive') return {    // bubbles, seen from below
+      bubble: 1,
+      x: Math.random() * W, y: anywhere ? Math.random() * H : H + Math.random() * 60 * dpr,
+      vy: -(.35 + Math.random() * .85) * dpr, vx: (Math.random() - .5) * .2 * dpr,
+      r: (2 + Math.random() * (Math.random() < .12 ? 9 : 4.5)) * dpr,
+      f: Math.random() * 6.28, fv: .05
+    };
+    const fly = theme === 'forest';   // fireflies: smaller, slower, deeper blink
     return {
       x: Math.random() * W, y: anywhere ? Math.random() * H : H + Math.random() * 80 * dpr,
-      vy: -(0.12 + Math.random() * 0.35) * dpr, vx: (Math.random() - .5) * .15 * dpr,
-      r: (2 + Math.random() * 6) * dpr, f: Math.random() * 6.28, hue: 26 + Math.random() * 20
+      vy: -(0.12 + Math.random() * 0.35) * (fly ? .55 : 1) * dpr, vx: (Math.random() - .5) * (fly ? .3 : .15) * dpr,
+      r: (fly ? 1.3 + Math.random() * 3.2 : 2 + Math.random() * 6) * dpr,
+      f: Math.random() * 6.28, fv: fly ? .06 + Math.random() * .07 : .04,
+      blink: fly ? .5 : .18, hue: T.ambHue()
     };
   }
 
@@ -91,6 +152,16 @@
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 7, 0, 6.283); ctx.fill();
     ctx.fillStyle = `hsla(${hue},100%,88%,${Math.min(1, glow)})`;
     ctx.beginPath(); ctx.arc(x, y, r * .65, 0, 6.283); ctx.fill();
+  }
+
+  // ---------- a bubble (dive mode) ----------
+  function bub(x, y, r, k) {
+    ctx.strokeStyle = `rgba(205,238,255,${Math.min(1, .5 * k)})`;
+    ctx.lineWidth = Math.max(.8, r * .14);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = `rgba(190,232,255,${.07 * k})`; ctx.fill();
+    ctx.fillStyle = `rgba(255,255,255,${Math.min(1, .8 * k)})`;
+    ctx.beginPath(); ctx.arc(x - r * .35, y - r * .4, Math.max(.7, r * .16), 0, 6.283); ctx.fill();
   }
 
   // ---------- text wrapping for the lantern paper ----------
@@ -225,8 +296,36 @@
       rise: (12 + Math.random() * 8) * dpr,       // px/s on screen, same pace as the drifting lights
       wind: (Math.random() - .5) * 8 * dpr,
       spin: Math.random() * 6.28, spinV: (Math.random() < .5 ? -1 : 1) * (.1 + Math.random() * .1),
-      hue: 30 + Math.random() * 8
+      hue: THEMES[theme].lantHue()
     });
+  }
+
+  // ---------- the mass release: lanterns, fireflies or bubbles fill the scene ----------
+  function spawnSwarm() {
+    const dv = theme === 'dive';
+    for (let i = 0; i < (dv ? 90 : 72); i++) swarm.push({
+      x: Math.random() * W, y: H + Math.random() * H * .7 + 30 * dpr,
+      vy: -((dv ? .9 : .4) + Math.random() * (dv ? .9 : .45)) * dpr, vx: (Math.random() - .5) * .12 * dpr,
+      r: (1.8 + Math.random() * 4.2) * dpr, f: Math.random() * 6.28, ph: Math.random() * 6.28,
+      hue: THEMES[theme].lantHue(), t: 0
+    });
+  }
+
+  // ---------- a wish as a firefly or a bubble, with its words drifting off ----------
+  function addWisp(text) {
+    const rect = form.getBoundingClientRect();
+    wisps.push({ text, t: 0, x: (rect.left + rect.width / 2) * dpr, y: rect.top * dpr - 26 * dpr });
+  }
+  function releaseCreature(text) {
+    const rect = form.getBoundingClientRect();
+    const a = mkAmbient(true), dv = theme === 'dive';
+    Object.assign(a, {
+      x: (rect.left + rect.width / 2) * dpr, y: rect.top * dpr - 18 * dpr,
+      vx: (Math.random() - .5) * .4 * dpr, vy: -(.55 + Math.random() * .35) * dpr,
+      r: (dv ? 8 + Math.random() * 5 : 2.6 + Math.random() * 1.6) * dpr
+    });
+    ambient.push(a);
+    addWisp(text);
   }
 
   // ---------- main loop ----------
@@ -235,6 +334,7 @@
     const f = dt * 60;
     ctx.clearRect(0, 0, W, H);
     const R = 220 * dpr, MX = mx * dpr, MY = my * dpr;
+    if (ambient.length > ambN + 300) ambient.splice(0, ambient.length - ambN - 300);
 
     for (const a of ambient) {
       let boost = 0;
@@ -244,10 +344,12 @@
       }
       a.vx *= Math.pow(.985, f); a.vy = a.vy * Math.pow(.99, f) - .003 * dpr * f;
       if (a.vy > -.08 * dpr) a.vy -= .01 * dpr * f;
-      a.y += a.vy * f; a.x += a.vx * f + Math.sin(a.y / 140) * .22 * f; a.f += .04 * f;
+      a.y += a.vy * f; a.x += a.vx * f + Math.sin(a.y / 140) * .22 * f; a.f += (a.fv || .04) * f;
       if (a.y < -60) Object.assign(a, mkAmbient(false));
       if (a.x < -80) a.x = W + 40; if (a.x > W + 80) a.x = -40;
-      dot(a.x, a.y, a.r, a.hue, (.7 + Math.sin(a.f) * .18) * (1 + boost * .9));
+      // Boyle's law, loosely: less pressure near the surface, so a rising bubble swells
+      if (a.bubble) bub(a.x, a.y, a.r * (1 + 2 * Math.max(0, Math.min(1, 1 - a.y / H))), 1 + boost * .4);
+      else dot(a.x, a.y, a.r, a.hue, (.7 + Math.sin(a.f) * (a.blink || .18)) * (1 + boost * .9));
     }
 
     for (let i = embers.length - 1; i >= 0; i--) {
@@ -255,6 +357,16 @@
       e.y += e.vy * f; e.x += Math.sin(e.y / 120 + e.ph) * .2 * f; e.f += .04 * f; e.life -= f;
       if (e.life <= 0 || e.y < -40) { embers.splice(i, 1); continue; }
       dot(e.x, e.y, e.r, e.hue, (.75 + Math.sin(e.f) * .18) * Math.min(1, e.life / 240));
+    }
+
+    for (let i = swarm.length - 1; i >= 0; i--) {
+      const s = swarm[i];
+      s.t += dt;
+      s.y += s.vy * f; s.x += s.vx * f + Math.sin(s.y / 160 + s.ph) * .18 * f; s.f += .035 * f;
+      if (s.y < -40) { swarm.splice(i, 1); continue; }
+      const k = smooth(0, 2, s.t);
+      if (theme === 'dive') bub(s.x, s.y, s.r * (1 + 2 * Math.max(0, Math.min(1, 1 - s.y / H))), k);
+      else dot(s.x, s.y, s.r, s.hue, (.72 + Math.sin(s.f) * .18) * k);
     }
 
     for (let i = sparks.length - 1; i >= 0; i--) {
@@ -294,6 +406,20 @@
       if (far < 1) lantern(p, sx, sy, S, glow, flame, tilt, smooth(0, .5, t) * (1 - far));
       if (far > 0) dot(sx, sy + S * .3, Math.max(2.5 * dpr, S * .1), p.hue, (.7 + .25 * flame) * far);
     }
+
+    for (let i = wisps.length - 1; i >= 0; i--) {   // the words of a wish, drifting off
+      const w = wisps[i];
+      w.t += dt; w.y -= 16 * dpr * dt;
+      if (w.t > 4.6) { wisps.splice(i, 1); continue; }
+      const a = smooth(0, .5, w.t) * smooth(4.6, 3.4, w.t);
+      ctx.font = `${17 * dpr}px ${BRUSH}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.shadowBlur = 14 * dpr;
+      if (theme === 'dive') { ctx.shadowColor = 'rgba(140,220,255,.8)'; ctx.fillStyle = `rgba(226,245,255,${.92 * a})`; }
+      else { ctx.shadowColor = 'rgba(190,255,140,.8)'; ctx.fillStyle = `rgba(228,255,190,${.92 * a})`; }
+      ctx.fillText(w.text, w.x, w.y);
+      ctx.shadowBlur = 0;
+    }
     requestAnimationFrame(frame);
   }
 
@@ -302,30 +428,58 @@
     e.preventDefault();
     const text = ta.value.trim();
     if (!text) { form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); ta.focus(); return; }
-    release(text);
+    if (theme === 'forest' || theme === 'dive') releaseCreature(text);
+    else release(text);
     ta.value = '';
+    released++;
+    if (released === 3 && !swarmDone) { swarmDone = true; setTimeout(spawnSwarm, 4200); }
   });
+
+  // ---------- theme switching ----------
+  const modesEl = document.getElementById('modes');
+  function setTheme(t) {
+    if (!THEMES[t]) t = 'night';
+    theme = t;
+    document.body.classList.remove('theme-forest', 'theme-dive');
+    if (t !== 'night') document.body.classList.add('theme-' + t);
+    try { localStorage.setItem('yipeng-theme', t); } catch (e) {}
+    for (const b of modesEl.querySelectorAll('button')) b.classList.toggle('on', b.dataset.theme === t);
+    document.querySelector('.wish button span').textContent = THEMES[t].btn;
+    ambient.length = 0;
+    if (W) resize();
+  }
+  modesEl.addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTheme(b.dataset.theme); });
   addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; mouseOn = true; });
   document.addEventListener('mouseleave', () => { mouseOn = false; });
   function burst(cx, cy) {
+    if (theme === 'forest' || theme === 'dive') {   // fireflies scatter / bubbles rush out
+      for (let i = 0; i < (theme === 'dive' ? 14 : 10); i++) {
+        const a = mkAmbient(true), an = Math.random() * 6.283, sp = (.8 + Math.random() * 1.8) * dpr;
+        Object.assign(a, { x: cx * dpr, y: cy * dpr, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp - .5 * dpr });
+        ambient.push(a);
+      }
+      return;
+    }
     for (let i = 0; i < 22; i++) {
       const a = Math.random() * 6.283, sp = (1.4 + Math.random() * 3.2) * dpr;
       sparks.push({ x: cx * dpr, y: cy * dpr, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - .9 * dpr,
         r: (4 + Math.random() * 6) * dpr, f: Math.random() * 6.28, hue: 26 + Math.random() * 20, life: 110 + Math.random() * 80 });
     }
   }
-  addEventListener('mousedown', e => { if (!e.target.closest('.wish')) burst(e.clientX, e.clientY); });
+  addEventListener('mousedown', e => { if (!e.target.closest('.wish, .modes')) burst(e.clientX, e.clientY); });
   let tx = 0, ty = 0, moved = false, lastBurst = 0;
   addEventListener('touchstart', e => { const t = e.touches[0]; if (!t) return; tx = t.clientX; ty = t.clientY; moved = false; mx = tx; my = ty; mouseOn = true; }, { passive: true });
   addEventListener('touchmove', e => { const t = e.touches[0]; if (!t) return; mx = t.clientX; my = t.clientY; if (Math.hypot(mx - tx, my - ty) > 10) moved = true; }, { passive: true });
   addEventListener('touchend', e => {
     mouseOn = false;
     const t = e.changedTouches[0], now = Date.now();
-    if (!t || moved || now - lastBurst < 2500 || e.target.closest('.wish')) return;
+    if (!t || moved || now - lastBurst < 2500 || e.target.closest('.wish, .modes')) return;
     burst(t.clientX, t.clientY); lastBurst = now;
   }, { passive: true });
   addEventListener('resize', resize);
 
+  let saved = null; try { saved = localStorage.getItem('yipeng-theme'); } catch (e) {}
+  setTheme(saved || 'night');
   resize();
   (document.fonts ? document.fonts.load(`40px "Ma Shan Zheng"`, '心愿') : Promise.resolve()).catch(() => {}).finally(() => {});
   requestAnimationFrame(t => { last = t; frame(t); });
